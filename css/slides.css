@@ -1,0 +1,247 @@
+
+
+@import url('https://fonts.googleapis.com/css?family=Droid+Sans');
+@import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+body {
+    font-family: 'Droid Sans', sans-serif;
+    margin:0;
+    padding:0;
+}
+h1, h2, h3 {
+    font-family: 'Droid Sans', sans-serif;
+    font-weight: bold;
+    padding:0;
+    margin:0;
+}
+h1{
+  font-size: .5em;
+}
+
+.remark-slide-content > h1:first-of-type {
+  margin-top: 0.0ex;
+  padding-top:0.0px;
+  line-height: 1;
+}
+
+.author {
+    position: absolute;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    transform: translateX(-50%);
+    bottom: 3em;
+    font-size: 160%;
+}
+
+
+.license {
+    position: absolute;
+    bottom: 0em;
+    font-size: 70%;
+    text-align: left;
+}
+
+.footnote {
+    position: absolute;
+    bottom: 0em;
+    font-size: 70%;
+}
+
+.remark-code, .remark-inline-code {
+    font-family: 'Ubuntu Mono';
+    line-height: 1.15;
+}
+
+/*remove extra space from top of the slide*/
+.remark-slide-content {
+  padding-top: 0;
+}
+
+.tiny { font-size: 50%; }
+.small { font-size: 70%; }
+.smaller { font-size: 85%; }
+.big { font-size: 140%; }
+.bigger {font-size: 160%; }
+.large { font-size: 200%; }
+.huge { font-size: 300%; }
+.code{font-family: 'Ubuntu Mono'; }
+.center { text-align: center; }
+.left { text-align: left; }
+.right { text-align: right; }
+.center70 {
+    text-align:center;
+    width: 70%;
+}
+.highlight{
+    background-color: #FECA3F;
+}
+
+.standout{
+    color: #CC0000;
+}
+
+.blue{
+    color: #0000DD;
+}
+.bluebold{
+    color: #0000DD;
+    font-weight: bold;
+}
+
+.red{
+    color: #dc143c;
+}
+.redbold{
+    color: #dc143c;
+    font-weight: bold;
+}
+
+.green{
+    color: #008000;
+}
+.greenbold{
+    color: #008000;
+    font-weight: bold;
+}
+
+.section {
+    background-color: #CABFDC;
+    border-style: solid;
+    border-color: #999; border-width:5px;
+    padding: 2.5em;
+}
+
+/* code output formatting */
+.output {
+  margin: 1px;
+  padding: 0 0 0 0.5em;
+  /*border-style: solid; border-color: #AAA; border-width:1px;*/
+  background-color: #CCC;
+}
+
+/* code output formatting */
+.box2 {
+  margin: 0 0.5em 0 0.5em;
+  padding: 0.5em;
+  border-style: solid; font-size: 70%; border-color: #AAA; border-width:3px;
+  background-color: #CABFDC;
+}
+
+/* box formatting */
+.box {
+  font-size: 120%;
+  margin: 0 0.5em 0 0.5em;
+  padding: 0.5em;
+  border-style: solid;
+  border-color: #AAA; border-width:3px;
+  background-color: #AADDFF;
+}
+
+
+.centered_80{
+    width: 80%;
+    margin:auto;
+}
+
+.centered_80_hanging p {
+    padding-left: 2em ;
+    text-indent: -2em ;
+}
+.zero_list {
+  counter-reset: zero-counter -1;
+  text-indent: -2ex;
+}
+.zero_list ol {
+    list-style: none;
+}
+.zero_list li::before {
+    counter-increment: zero-counter;
+    content: counter(zero-counter) ". " ;
+}
+
+/* Two-column layout */
+.left-column2 {
+width: 44%;
+float: left;
+padding:1% 5% 1% 1%;
+}
+
+.right-column2 {
+width: 44%;
+float: right;
+padding:1% 1% 1% 5%;
+}
+
+.below-column2 {
+  clear: both;
+}
+
+
+
+
+/* Two-column layout */
+.left-column2-small {
+width: 24%;
+float: left;
+padding:1% 5% 1% 1%;
+}
+
+.right-column2-large {
+width: 64%;
+float: right;
+padding:1% 1% 1% 5%;
+}
+
+
+
+/* Two-column layout */
+.left-column2-large {
+width: 64%;
+float: left;
+padding:1% 5% 1% 1%;
+}
+
+.right-column2-small {
+width: 24%;
+float: right;
+padding:1% 1% 1% 5%;
+}
+
+
+
+
+@media print {
+  .remark-slide-scaler {
+    width: 100% !important;
+    height: 100% !important;
+    transform: scale(1) !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+}
+
+table {
+    /*font-family: arial, sans-serif;*/
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td, th {
+    border: 1px solid #dddddd;
+    text-align: center;
+    padding: 2px;
+}
+/*
+tr:nth-child(odd), td {
+    border: 1px solid #ffffff;
+    background-color: #eeeeee;
+}*/
+.super{
+   vertical-align: super;
+   font-size: 70%;
+ }
+
+.sub{
+   vertical-align: sub;
+   font-size: 70%;
+ }

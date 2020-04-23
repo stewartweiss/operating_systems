@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>Process Synchronization</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="css/slides.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+    <textarea id="source">
+
+class: center, middle
+
+## CSCI 340 Operating Systems
+
+<br>
+
+## Process Synchronization
+
+.author[
+Stewart Weiss<br>
+]
+
+.license[
+Copyright 2020 Stewart Weiss. Unless noted otherwise all content is released under a
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
+]
+
+---
+
+## Topics Covered
+
+.box[
+- The Basic Problem
+- The Critical-Section Problem
+- Software Solution: Peterson’s Solution
+- Hardware Support for Synchronization
+- Mutex Locks
+- Semaphores
+- Monitors
+- Liveness
+]
+---
+
+## Basic Problem
+
+.section[
+.big[What problem are we trying to solve?]
+
+- Processes can execute concurrently, either on same processor or on different ones.
+
+- Processes may be interrupted at any time, partially completing execution.
+
+- Processes might modify shared data.
+
+- Concurrent modification of shared data may result in .redbold[data inconsistency]:
+when two or more processes have different values of the same  data object,
+such as  a shared counter.
+
+- When the data inconsistency depends on the _order_ in which the processes
+modify the shared data, _and this is undesirable_, it is called a .redbold[race condition].
+
+- Preventing race conditions requires .redbold[synchronization mechanisms] to ensure the controlled
+  execution of cooperating processes.
+]
+---
+## Why is this an Operating System Topic?
+
+- Modern operating systems are composed of cooperating processes and/or threads.
+
+- These modify and access shared data such as tables that control memory allocation,
+file access, process creation, device management, and so on.
+
+- These accesses are potential race conditions that must be resolved.
+
+- Therefore to understand operating system design and function,
+it is imperative to understand the different means of process synchronization with
+respect to shared resources.
+
+
+---
+
+##  Example of a Race Condition
+- The solution to the .redbold[producer-consumer problem] from Chapter 3
+needed to keep one buffer empty to distinguish between empty and full conditions in the buffer pool:
+
+.center[
+
+```
+in == out                      iff buffer is empty
+(in +1) % BUFFER_SIZE == out   iff buffer is full
+```
+]
+.center[
+    <img src="figures/bufferpool.png" width=60% alt="Buffer Pool"/>
+]
+- Suppose that we want a solution that fills _all of the buffers_.
+
+--
+
+- We can keep an integer `counter` that keeps track of the number of
+full buffers.  Initially, `counter == 0`.
+- It is incremented by the producer after it fills a buffer and is
+decremented by the consumer after it consumes (empties) a buffer.
+
+---
+## Producer and Consumer Code
+
+
+.centered_80[
+Producer:
+```C
+    while (true) {
+        /* produce an item in next produced */
+
+        while (counter == BUFFER_SIZE)
+            ; /* do nothing */
+        buffer[in] = next_produced;
+        in = (in + 1) % BUFFER_SIZE;
+*        counter++;
+    }
+```
+]
+
+
+.centered_80[
+Consumer:
+```C
+    while (true) {
+        while (counter == 0)
+           ; /* do nothing */
+        next_consumed = buffer[out];
+        out = (out + 1) % BUFFER_SIZE;
+*        counter--;
+
+        /* consume the item in next consumed */
+    }
+```
+]
+---
+## The Race Condition
+
+- This code has a .redbold[race condition] on the `counter` variable. In the two highlighted
+lines
+
+  - `counter++` could be implemented as
+  ```
+       register1 = counter
+       register1 = register1 + 1
+       counter   = register1
+  ```
+  - and `counter--` could be implemented as
+  ```
+       register2 = counter
+       register2 = register2 - 1
+       counter   = register2
+  ```
+  - Consider this execution interleaving with `counter == 2` initially. `Sk` denotes
+  the kth time step:
+  ```
+       S0: producer executes register1 = counter         {register1 == 2 }
+       S1: producer executes register1 = register1 + 1   {register1 == 3 }
+       S2: consumer executes register2 = counter         {register2 == 2 }
+       S3: consumer executes register2 = register2 – 1   {register2 == 1 }
+       S4: producer executes counter   = register1       {counter   == 3 }
+       S5: consumer executes counter   = register2       {counter   == 1 }
+  ```
+- If S4 and S5 are swapped, then the final value of `counter` is 3, not 1.
+
+---
+## Race Conditions in the Kernal
+
+- Race conditions can occur whenever shared variables are updated by two independent
+processes or threads.
+
+- A Linux kernel would have many race conditions if it did not use
+mechanisms to prevent them. For example,
+
+   - In the implementation of the `fork()` system call, a new process id is assigned
+   to the newly created process.
+
+   - This requires incrementing the variable that stores the next available process id value.
+
+   - If a computer has multiple cores, two processes might try to update that
+     variable concurrently. On a single core, if the kernel is interrupted in the
+     middle of the update, it is also possible that a second process could try to
+     update it as well.
+
+   - The value of the next available pid could be corrupted if these accesses were
+     not synchronized.
+
+---
+## Preventing Race Conditions in the Kernel
+
+- On a single-core processor, the kernel could use the following strategy:
+```
+     disable all interrupts before executing any updates;
+     perform the updates;
+     re-enable interrupts
+```
+
+- This would guarantee that only one process at a time could modify shared data.
+
+- On multi-processors, this does not suffice, because the shared data can be
+modified by two different processes on separate cores.
+
+- Even on a single-processor machine with no hyper-threading, disabling interrupts
+is not an efficient solution for long sections of code, since  important events
+might need to be handled during the time spent in the CS.
+
+---
+## Preemptive Kernels
+
+- A kernel is defined to be .redbold[preemptive] if it allows a process that is executing
+code in it to be preempted. In effect, more than one process can be executing
+kernel code, even the same code, concurrently.
+
+- A kernel that does not allow this is called a .redbold[non-preemptive kernel].
+In a non-preemptive kernel, a kernel-mode process will run until it exits
+kernel mode, blocks, or voluntarily yields control of the CPU.
+
+- Non-preemptive kernels are simpler to design but have poorer response time
+than premptive kernels.
+
+---
+## Re-entrant Kernels
+
+- A kernel is defined to be .redbold[re-entrant] if more than one process can safely
+execute its code concurrently, meaning without causing data inconsistency.
+This means that more than one process executes in __kernel mode__ at a time.
+
+- Preemptive kernels must be re-entrant, otherwise data inconsistency results.
+
+- How can kernel code be made re-entrant?
+
+--
+
+- If all kernel functions modify only local variables and do not alter
+global data structures, the code is re-entrant.
+Such functions are called .redbold[re-entrant functions].
+
+- Alernatively, if the kernel functions modify shared data structures, then some other kind of
+mechanism is needed to ensure that race conditions do not occur.
+This is what we are about to study.
+
+
+
+
+
+---
+## Preventing Race Conditions: The Critical Section Problem
+
+- Consider a system of n concurrent processes P.sub[0], P.sub[1], ...,P.sub[n-1].
+
+- Each process has a .redbold[critical section] of code in which:
+
+  - it may be modifying shared variables, updating tables, writing files, etc.
+
+  - requiring that, when one process is in its critical section, no other can be in its critical section.
+
+-  The .redbold[Critical Section Problem] is to design protocol that all processes
+can use to coordinate their accesses to this critical section of code.
+
+- A solution requires that each process must
+
+  1. ask permission to enter its critical section in an .redbold[entry section],
+  1. execute the .redbold[critical section]
+  1. execute an .redbold[exit section] in which it indicates that it
+    exited its critical section, and
+  1. executes .redbold[non-critical section] code.
+
+
+---
+## General Form of a Process
+
+- Since the goal is to find protocols to solve critical section problem, we represent
+a process as doing nothing but repeatedly entering and exiting a critical section,
+and doing "other stuff" when it is not in its critical section.
+
+- Therefore we represent a process as executing code of the following form:
+
+.centered_80[
+```
+
+   loop forever  {
+       ENTRY SECTION : indicate wish to enter the critical section
+
+       Critical Section (CS)
+
+       EXIT SECTION: indicate leaving the critical section
+
+       Non-Critical Section (NCS)
+   }
+```
+]
+
+---
+## The Conditions A Solution Must Satisfy
+
+.section[
+.bigger[Any solution to the problem must satisfy three criteria.]
+
+- .redbold[Mutual Exclusion]. If process Pi is executing in its critical section,
+then no other processes can be executing in their critical sections
+
+- .redbold[Progress]. If no process is executing in its critical section and there exist
+some processes that wish to enter their critical section,
+then the selection of the processes that will enter the critical
+section next cannot be postponed indefinitely
+
+- .redbold[Bounded Waiting].  A bound must exist on the number of times
+that other processes are allowed to enter their critical sections
+after a process has made a request to enter its critical section
+and before that request is granted
+]
+
+---
+## Allowed Assumptions
+
+.section[
+.bigger[ What can we assume?]
+- We can assume that each process executes at a nonzero speed.
+
+- We can assume that machine instructions to fetch, store, and test values are
+atomic, i.e., uninterruptible.
+
+- We can assume processes do not halt in their critical sections.
+
+- We __cannot assume__ that processes execute at any particuar relative speeds
+or that some processes have higher priorities than others.
+
+]
+
+
+
+
+
+---
+## Algorithm 1
+
+Assume that two processes, `P0` and `P1`, execute concurrently. They share a
+variable `turn`  set to 0 initially:
+
+```C
+     turn = 0;
+```
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       while (turn != 0) {} /* entry section*/
+
+       /* critical section (CS) */
+
+       turn = 1;   /* exit section */
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       while (turn != 1) {} /* entry section*/
+
+       /* critical section (CS)*/
+
+       turn = 0;    /* exit section */
+       /* remainder section (NCS) */
+   }
+```
+]]
+
+- Process P.sub[k]  (`k=0,1`) entry section is .redbold[ `wait until turn == k`]
+- Process P.sub[k]   (`k=0,1`) exit section is  .redbold[`turn = 1-k;` ]
+(i.e., other process gets turn)
+- Implies P.sub[k]  is in CS only if `turn == k`.
+- Once  P.sub[k]  leaves CS, it sets `turn` so other process can enter.
+- Processes therefore .greenbold[_take turns_] in CS.
+
+--
+- This is called .redbold[ alternation ]
+--
+
+- Does this satisfy mutual exclusion, progress, and bounded waiting?
+
+---
+## Satisfies Mutual Exclusion?
+
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       while (turn != 0) {} /* entry section*/
+
+       /* critical section (CS) */
+
+       turn = 1;           /* exit section */
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       while (turn != 1) {} /* entry section*/
+
+       /* critical section (CS)*/
+
+       turn = 0;           /* exit section */
+       /* remainder section (NCS) */
+   }
+```
+]]
+
+- Yes.
+
+--
+
+- The variable .redbold[ `turn`] is shared.
+It can store either a `1` or a `0` at any
+time, not both.
+
+- Since `P0` is in CS only if .redbold[ `turn == 0`] and
+`P1` is in CS only if .redbold[ `turn == 1`],
+they cannot be in the CS at the same time.
+
+---
+## Satisfies Progress?
+
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       while (turn != 0) {} /* entry section*/
+
+       /* critical section (CS) */
+
+       turn = 1;           /* exit section */
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       while (turn != 1) {} /* entry section*/
+
+       /* critical section (CS)*/
+
+       turn = 0;           /* exit section */
+       /* remainder section (NCS) */
+   }
+```
+]]
+
+--
+
+- Consider this sequence:
+
+  <span class="blue">
+  `P0` enters CS, sets `turn` to 1, enters NCS and stays there a long time.
+
+  <span class="blue">
+  `P1` enters CS because `turn` is 1, sets `turn` to 0, enters its NCS, goes back to
+  its entry section and waits for `turn` to become 1.
+
+  <span class="blue">
+  But `turn` cannot become 1 until `P0` leaves its NCS, enters its CS again.
+  </span>
+
+- Progress is not satisfied  because a process that wants to enters its CS (`P1`) is blocked from
+getting in even though no other process is in its entry or exit sections or its
+CS.
+
+
+---
+## Algorithm 2
+
+- Assume two processes, `P0` and `P1`, execute concurrently
+- __Initialization__. A global array of two bools, initially both `false`:
+  ```
+     bool flag[2] = {false, false};
+  ```
+- The variable .redbold[ `flag`]  should be named
+.redbold[`ready_to_enter_CS`] for clarity.
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       flag[0] = true;     /* entry   */
+       while ( flag[1] ) {} /* section */
+
+       /* critical section (CS) */
+
+       flag[0] = false;    /* exit section */
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       flag[1] = true;     /* entry   */
+       while ( flag[0] ) {} /* section */
+
+       /* critical section (CS) */
+
+       flag[1] = false;    /* exit section */
+       /* remainder section (NCS)*/
+   }
+```
+]]
+
+
+- When process P.sub[k]  (`k=0,1`) sets `flag[k] = true`,
+it is saying, "I am ready to enter CS".
+- It then politely waits for other process with the following `while` loop -
+if other process is ready to enter its CS, it waits.
+
+---
+## Satisfies Mutual Exclusion?
+
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       flag[0] = true;     /* entry   */
+       while ( flag[1] ) {} /* section */
+
+       /* critical section (CS) */
+
+       flag[0] = false;    /* exit section */
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       flag[1] = true;     /* entry   */
+       while ( flag[0] ) {} /* section */
+
+       /* critical section (CS) */
+
+       flag[1] = false;    /* exit section */
+       /* remainder section (NCS)*/
+   }
+```
+]]
+
+- Yes.
+
+--
+- A process enters its CS only if the other process is NOT ready to enter,
+e.g., process  P0 enters CS only if `flag[1]` is `false`. Both processes set
+their `flag` to true before testing each other's `flag` so both cannot be
+`false` at the top of the loop on each iteration.
+
+---
+## Satisfies Progress?
+
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       flag[0] = true;     /* entry   */
+       while ( flag[1] ) {} /* section */
+
+       /* critical section (CS) */
+
+       flag[0] = false;    /* exit section */
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       flag[1] = true;     /* entry   */
+       while ( flag[0] ) {} /* section */
+
+       /* critical section (CS) */
+
+       flag[1] = false;    /* exit section */
+       /* remainder section (NCS)*/
+   }
+```
+]]
+
+--
+
+- Consider this scenario:
+  - P0 sets `flag[0] = true` and  P1 sets `flag[1] = true` at the same time.
+  - Each now executes its respective while loop.
+  - Because both are ready to enter CS, neither while loop is exited and both
+    processes wait forever to enter the CS.
+
+--
+
+- No progress is made.
+
+--
+
+- This is called  .redbold[deadlock].
+
+---
+## Peterson's Two-Process Software Solution
+
+- Gary Peterson invented it in 1981<span class="super">1</span>.
+
+- This algorithm uses both variables, `flag[2]` and `turn` to solve the problem.
+
+- The use of both prevents alternation and prevents deadlock.
+
+-  It assumes that the load and store machine-language instructions are atomic;
+  that is, cannot be interrupted.
+
+- The variable turn indicates whose turn it is to enter the critical section.
+- The flag array is used to indicate if a process is ready to enter the critical section.
+ `flag[k] = true`  implies that process Pk is ready.
+
+
+.footnote[
+[1] G. L. Peterson: "Myths About the Mutual Exclusion Problem", Information Processing Letters 12(3) 1981, 115–116
+]
+
+---
+## Peterson's Algorithm
+
+- A process gains entry to its CS if the other process is not ready to enter its CS
+(by setting its `flag`  to false) __or__ if the other process has given
+privilege to the process by setting `turn` to that process's id, e.g., `turn = 0`.
+
+-  __Initialization__.
+ ```C
+  bool flag[2] = {false, false};
+  int turn;
+
+ ```
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       flag[0] = true;
+       turn = 1;
+       while (flag[1] == true && turn == 1) {}
+
+       /* critical section (CS) */
+
+       flag[0] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       flag[1] = true;
+       turn = 0;
+       while (flag[0] == true && turn == 0) {}
+
+       /* critical section (CS) */
+
+       flag[1] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+
+
+
+---
+## Satisfies Mutual Exclusion?
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       flag[0] = true;
+       turn = 1;
+       while (flag[1] == true && turn == 1) {}
+
+       /* critical section (CS) */
+
+       flag[0] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       flag[1] = true;
+       turn = 0;
+       while (flag[0] == true && turn == 0) {}
+
+       /* critical section (CS) */
+
+       flag[1] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+
+
+- If P0 is in its CS, then it set `flag[0]` to true. (Only sets it to false
+ when it leaves, and then it gets set to true again after the NCS.)
+- The same is true of P1: if P1 is in its CS, it set `flag[1]` to true and has not yet
+ set it to false again. Therefore, if both are in their CS, then
+
+  `flag[0] == flag[1] == true`.
+
+--
+- To enter its CS, when P0 evaluated its condition either `flag[1] == false` or `turn == 0`.
+
+--
+- Since both `flag` values are true, the only way any process could exit the busy-wait
+loop is for `turn` to be the value that made it false - for P0, `turn == 0`,
+for P1, `turn == 1`.  But `turn` cannot be both 0 and 1 simultaneously.
+Mutual exclusion is therefore satisfied.
+
+---
+## Satisfies Progress?
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       flag[0] = true;
+       turn = 1;
+       while (flag[1] == true && turn == 1) {}
+
+       /* critical section (CS) */
+
+       flag[0] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       flag[1] = true;
+       turn = 0;
+       while (flag[0] == true && turn == 0) {}
+
+       /* critical section (CS) */
+
+       flag[1] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+
+
+- The only way that a process trying to gain access to the CS would be denied
+access is if it is busy-waiting in its while loop.
+
+- If neither is making progress, it implies that `turn == 1` and `turn == 0`
+simultaneously.
+
+- Progress is easily seen to be satisfied.
+
+
+---
+## Satisfies Bounded Waiting?
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       flag[0] = true;
+       turn = 1;
+       while (flag[1] == true && turn == 1) {}
+
+       /* critical section (CS) */
+
+       flag[0] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       flag[1] = true;
+       turn = 0;
+       while (flag[0] == true && turn == 0) {}
+
+       /* critical section (CS) */
+
+       flag[1] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+
+
+- If a process is busy waiting in its while loop, and the other is not
+in its CS, then either it is in its NCS and its `flag` is false, in which
+case the waiting process will enter after waiting for at most one other process,
+or the other process re-entered its entry section, and will set `turn` to the value
+that will allow the waiting process to enter, so again the waiting process will
+not wait for more than one other process.
+
+- Bounded Waiting is satisfied.
+
+---
+## Limitations of Peterson's Algorithm
+
+- It is not guaranteed to work on modern computers because of optimizations that
+compilers and processors can perform.
+
+  - To improve performance, processors and compilers might reorder operations
+    that have no dependencies.
+
+  - The order in which the high level instructions appear is not necessarily
+     the same as the order in which they are executed.
+
+  - For single-threaded applications, it is safe because it does not change result
+    of a computation.
+
+  - For multi-threaded applications, re-ordering can cause different results.
+
+---
+## Effects of Instruction Re-ordering
+
+- Suppose two threads share two variables `flag` and `count`, initialized as
+```C
+       boolean flag = false;
+       int     count = 0;
+```
+   with the respective code fragments
+
+.left-column2[.left[
+```C
+   Thread0:
+       while (! flag)  {
+           /* do nothing */
+       }
+       print count;
+```
+]]
+.right-column2[.left[
+```C
+   Thread1:
+       count = 10;
+       flag  = true;
+
+
+```
+]]
+
+--
+.below-column2[
+]
+
+- What is the expected output?
+
+--
+
+- If the compiler does not re-order any instructions, and the processors do not
+re-order instructions, then clearly the value of `count` to be printed will be
+`10` because Thread0 does not print until `flag` is true.
+
+--
+
+- But what if the instructions get re-ordered?
+
+---
+## Effects of Instruction Re-ordering (2)
+
+- If Thread1 is re-ordered, swapping the two instructions:
+
+  .left-column2[.left[
+  ```C
+     Thread0:
+         while (! flag)  {
+             /* do nothing */
+         }
+         print count;
+  ```
+  ]]
+  .right-column2[.left[
+  ```C
+     Thread1:
+         flag  = true;
+         count = 10;
+  ```
+  ]]
+
+--
+.below-column2[
+then the output might be 0 because Thread0 may print before `count` is
+updated.
+]
+
+- Re-ordering multi-threaded applications has risk!
+
+- Is Peterson's algorithm safe if instructions are re-ordered?
+
+--
+
+- No.
+
+---
+## Peterson's Algorithm Re-ordered
+
+- Suppose the two instructions in the entry section of P0 are re-ordered:
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       turn = 1;        /* RE-ORDERED */
+       flag[0] = true;  /* RE-ORDERED */
+       while (flag[1] == true && turn == 1) {}
+       /* critical section (CS) */
+       flag[0] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       flag[1] = true;
+       turn = 0;
+       while (flag[0] == true && turn == 0) {}
+       /* critical section (CS) */
+       flag[1] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.below-column2[
+- Consider this execution sequence (remember `flag[0] == flag[1] == false` initially):
+```
+    P0: turn = 1;
+    P1: turn = 0;
+    P1: flag[1] = true;
+    P1: eval (flag[0] == true && turn == 0)
+    P1: enter CS  /* because flag[0] == false */
+    P0: flag[0] = true;
+    P0: eval (flag[1] == true && turn == 1)
+    P0: enter CS  /* because turn == 0 */  /* P0 and P1 IN CS !!! */
+```
+  showing that it fails if compilers or processors re-order instructions.
+]
+
+---
+## Memory Barriers
+
+- Peterson's algorithm would be correct despite modern processors' and compilers' re-ordering
+of instructions if we had a way to enforce the order in which reads and writes of
+memory locations appear in the source code.
+
+
+--
+
+- This is the purpose of .redbold[memory barriers], which are also called
+.redbold[memory fences].
+
+- A memory barrier is an instruction that can be inserted into code to cause
+either the processor or the compiler to enforce an ordering constraint on
+memory operations issued before and after the barrier instruction. Whether it
+affects the processor or the compiler depends on the type of barrier.
+
+---
+## Memory Models
+
+- In general on a multi-processor with separate caches for each core, the order of loads
+and stores seen by each core are not guaranteed to be the same, and there
+are several different abstract models of what orderings are possible.
+
+- These are called .redbold[memory models]. There are several different models
+but they mostly fall into two categories:
+
+  -  .redbold[Strongly ordered]: a memory modification of one processor is
+      immediately visible to all other processors.
+
+  -  .redbold[Weakly ordered]: where a memory modification of one processor may not be
+      immediately visible to all other processors.
+
+- Different types of memory barriers work in different ways in these models.
+
+---
+## Example
+
+- The preceding example can be modified by inserting a memory barrier that forces
+the memory accesses to `flag` and `count` to occur in their respective threads
+as written:
+
+  .left-column2[.left[
+  ```C
+     Thread0:
+         while (! flag) ;
+         membarrier(MEMBARRIER_CMD_GLOBAL, 0);
+         print count;
+  ```
+  ]]
+  .right-column2[.left[
+  ```C
+     Thread1:
+         count = 10;
+         membarrier(MEMBARRIER_CMD_GLOBAL, 0);
+         flag  = true;
+   ```
+  ]]
+
+--
+.below-column2[
+The memory barrier above is a Linux hardware barrier that will force
+the load into `count` to be visible in Thread0 before the assignment
+to `flag` of true.
+]
+
+---
+## Peterson's Revisited
+
+- We could put barriers into Peterson's algorithm to prevent the
+reordering. The code below uses a different type of barrier.
+
+
+.left-column2[.left[
+```C
+   P0:
+   while (true)  {
+       flag[0] = true;
+       asm volatile ("mfence" : : : "memory");
+       turn = 1;
+       while (flag[1] == true && turn == 1) {}
+
+       /* critical section (CS) */
+
+       flag[0] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+.right-column2[.left[
+```C
+   P1:
+   while (true)  {
+       flag[1] = true;
+       asm volatile ("mfence" : : : "memory");
+       turn = 0;
+       while (flag[0] == true && turn == 0) {}
+
+       /* critical section (CS) */
+
+       flag[1] = false;
+       /* remainder section (NCS)*/
+   }
+```
+]]
+---
+
+## What Next?
+
+- We examine hardware-supported solutions to the critical section
+problem.
+
+---
+## Hardware Support for Critical Section Solutions
+
+- Much of the problem of race conditions stems from the fact that a simple
+update of a variable in memory requires more than one machine instruction.
+
+- The consequence is that the update can be interrupted and the data corrupted,
+as we showed earlier.
+
+--
+
+- On a single-processor machine, interrupts can be disabled to prevent this.
+
+--
+
+- On multi-processors, special hardware was introduced to support various
+software solutions, including
+  - the .redbold[test-and-set] instruction,
+  - the .redbold[compare-and-swap] instruction,
+  - the .redbold[fetch-and-add] instruction,
+  - .redbold[atomic] variables
+
+---
+## The Test-and-Set Instruction
+
+- The .redbold[test-and-set] hardware instruction is a __single machine instruction__
+whose logic is described by the following C-like code:
+.centered_80[
+```C
+    bool test_and_set(bool *target) {
+        bool return_value = *target;
+        *target          = true;
+        return return_value;
+    }
+```
+]
+
+  or looked at through its operational semantics:
+
+```C
+    /* Precondition: lock == b (where b can be true or false) */
+    bool key = test_and_set(&lock);
+    /* Post-condition: key == b && lock == true */
+```
+
+- It atomically copies and returns the existing value of its referenced parameter
+and sets its value to true.
+
+---
+## Using Test-and-Set for Critical Sections
+
+- We can use a busy-waiting loop with the `test_and_set` instruction to protect
+critical section access. Assume that `lock` is a boolean variable that is initially
+`false`. Each process executes code of the form
+
+.centered_80[
+```C
+
+   while (true)  {
+       while ( test_and_set(&lock) ) ; // ENTRY SECTION
+       /* CS */
+       lock = false; // EXIT SECTION
+       /* NCS */
+   }
+```
+]
+
+--
+
+- It is not hard to see that mutual exclusion is guaranteed by the fact that only
+one process can get through the while loop at a time.
+
+- Progress is guaranteed because whenever a process leaves the CS, it sets `lock`
+to false, forcing `test_and_set(&lock)` to return `false` for some process, which
+then enters its CS.
+
+- Bounded waiting is not guaranteed: it is possible for a process to wait indefinitely
+for its call to `test_and_set(&lock)` to return `false` just because of "bad timing".
+
+    </textarea>
+     <script src="js/remark.js" type="text/javascript">
+     </script>
+     <script src="js/remark_conf.js" type="text/javascript">
+     </script>
+
+  </body>
+</html>
