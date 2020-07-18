@@ -24,7 +24,7 @@ var slideshow = remark.create({
   },
 
   // Customize slide number label, either using a format string..
-  slideNumberFormat: '%current%/%total%',
+  slideNumberFormat: ' <a href="#2"> Top</a>  &emsp; %current%/%total%',
   // .. or by using a format function
   //slideNumberFormat: function (current, total) {
   //  return 'Slide ' + current + ' of ' + total;
@@ -36,5 +36,6 @@ var slideshow = remark.create({
   //syntax highlighting options:
   //highlightLanguage: 'python',
   highlightLines: true,
-  highlightStyle: 'github'
+  highlightStyle: 'github',
+  highlightSpans: true
 });

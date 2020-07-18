@@ -3,25 +3,53 @@
 @import url('https://fonts.googleapis.com/css?family=Droid+Sans');
 @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
 
+.title-slide {
+    background-image: url("../figures/structure.png");
+
+}
+
+.tinted {
+    background: rgb(225, 229, 231);
+}
+
 body {
     font-family: 'Droid Sans', sans-serif;
     margin:0;
     padding:0;
 }
+
 h1, h2, h3 {
     font-family: 'Droid Sans', sans-serif;
-    font-weight: bold;
+    font-weight: lighter;
     padding:0;
     margin:0;
 }
-h1{
-  font-size: .5em;
+h1 {
+    font-size: .5em;
+}
+
+h4 {
+    font-family: 'Droid Sans', sans-serif;
+    font-weight: bold;
+    padding:4px 0 0 0 ;
+    margin:0;
+}
+
+.inverse {
+    background: rgb(137, 171, 192);
+    color: #2e3d4c;
+    text-shadow: 0 0 20px #333;
+}
+
+.inverse h1, .inverse h2 {
+    color: #f3f3f3;
+    line-height: 1.0em;
 }
 
 .remark-slide-content > h1:first-of-type {
-  margin-top: 0.0ex;
-  padding-top:0.0px;
-  line-height: 1;
+    margin-top: 0.0ex;
+    padding-top:0.0px;
+    line-height: 1;
 }
 
 .author {
@@ -43,8 +71,16 @@ h1{
 
 .footnote {
     position: absolute;
-    bottom: 0em;
+    bottom: 1em;
     font-size: 70%;
+}
+
+.bottom-left {
+    position: absolute;
+    bottom: 0.6em;
+    font-size: 70%;
+    text-align: left;
+    /*font-size: 70%;*/
 }
 
 .remark-code, .remark-inline-code {
@@ -91,6 +127,7 @@ h1{
 .red{
     color: #dc143c;
 }
+
 .redbold{
     color: #dc143c;
     font-weight: bold;
@@ -99,6 +136,7 @@ h1{
 .green{
     color: #008000;
 }
+
 .greenbold{
     color: #008000;
     font-weight: bold;
@@ -127,14 +165,115 @@ h1{
   background-color: #CABFDC;
 }
 
-/* box formatting */
+/* box formatting - old
 .box {
   font-size: 120%;
   margin: 0 0.5em 0 0.5em;
   padding: 0.5em;
   border-style: solid;
   border-color: #AAA; border-width:3px;
-  background-color: #AADDFF;
+  background-color: rgb(202, 224, 231);
+}
+*/
+
+.box {
+  font-size: 90%;
+  margin: 0 0em 0 0.0em;
+  padding: 0px 5px  0px  5px;
+  border-style: solid;
+  border-color: #AAA; border-width:1px;
+}
+
+.box pre {
+  margin: 0;
+}
+
+.box hljs {
+
+}
+
+.yellow {
+  background-color: rgb(255, 255, 128);
+}
+
+.lightblue {
+  background-color: rgb(199, 241, 255);
+}
+
+.lightgreen {
+  background-color: rgb(238, 255, 204);
+}
+
+
+
+.yellowbox  {
+  margin: 0 0em 0 0.0em;
+  padding: 1px 5px  1px  5px;
+  border-style: solid;
+  border-color: #AAA; border-width:1px;
+  background-color: rgb(255, 255, 128);
+}
+
+.yellowbox .hljs {
+  background-color: rgb(255, 255, 128);
+}
+
+.yellowbox pre {
+  margin: 0;
+}
+
+
+.lightbluebox {
+  font-size: 90%;
+  margin: 0 0em 0 0.0em;
+  padding: 1px 5px  1px  5px;
+  border-style: solid;
+  border-color: #AAA; border-width:1px;
+  background-color: rgb(199, 241, 255);
+}
+
+.lightbluebox .hljs {
+  background-color: rgb(199, 241, 255);
+}
+
+.lightbluebox pre {
+  margin: 0;
+}
+
+
+
+.lightredbox {
+  font-size: 90%;
+  margin: 0 0em 0 0.0em;
+  padding: 1px 5px  1px  5px;
+  border-style: solid;
+  border-color: #AAA; border-width:1px;
+  background-color: rgb(255, 230, 230);
+}
+
+.lightredbox .hljs {
+  background-color: rgb(255, 230, 230);
+}
+
+.lightredbox pre {
+  margin: 0;
+}
+
+.lightgreenbox {
+  font-size: 90%;
+  margin: 0 0em 0 0.0em;
+  padding: 1px 5px  1px  5px;
+  border-style: solid;
+  border-color: #AAA; border-width:1px;
+  background-color: rgb(238, 255, 204);
+}
+
+.lightgreenbox .hljs {
+  background-color: rgb(238, 255, 204);
+}
+
+.lightgreenbox pre {
+  margin: 0;
 }
 
 
@@ -160,19 +299,19 @@ h1{
 }
 
 /* Two-column layout */
-.left-column2 {
+.left-column {
 width: 44%;
 float: left;
-padding:1% 5% 1% 1%;
+padding: 0% 5% 1% 1%;
 }
 
-.right-column2 {
+.right-column {
 width: 44%;
 float: right;
-padding:1% 1% 1% 5%;
+padding: 0% 1% 1% 5%;
 }
 
-.below-column2 {
+.below-column {
   clear: both;
 }
 
@@ -180,13 +319,13 @@ padding:1% 1% 1% 5%;
 
 
 /* Two-column layout */
-.left-column2-small {
+.left-column-small {
 width: 24%;
 float: left;
 padding:1% 5% 1% 1%;
 }
 
-.right-column2-large {
+.right-column-large {
 width: 64%;
 float: right;
 padding:1% 1% 1% 5%;
@@ -195,13 +334,13 @@ padding:1% 1% 1% 5%;
 
 
 /* Two-column layout */
-.left-column2-large {
+.left-column-large {
 width: 64%;
 float: left;
 padding:1% 5% 1% 1%;
 }
 
-.right-column2-small {
+.right-column-small {
 width: 24%;
 float: right;
 padding:1% 1% 1% 5%;
