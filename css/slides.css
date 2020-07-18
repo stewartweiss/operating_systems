@@ -93,6 +93,8 @@ h4 {
   padding-top: 0;
 }
 
+.fixed{ font-family: monospace }
+
 .tiny { font-size: 50%; }
 .small { font-size: 70%; }
 .smaller { font-size: 85%; }

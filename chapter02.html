@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>Introduction to Operating Systems</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="css/slides.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+    <textarea id="source">
+
+class: center, middle, title-slide
+
+
+
+## CSCI 340 Operating Systems
+
+<br>
+
+## Chapter 2: Operating System Structures
+
+.author[
+Stewart Weiss<br>
+]
+
+.license[
+Copyright 2020 Stewart Weiss. Unless noted otherwise all content is released under a
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
+Background image: roof of the EPIC Museum, Dublin, by Stewart Weiss.
+]
+
+
+---
+name: cc-notice
+template: default
+layout: true
+
+.bottom-left[&#169; Stewart Weiss. CC-BY-SA.]
+
+---
+name: tinted-slide
+template: cc-notice
+layout: true
+class: tinted
+
+---
+name:toc
+exclude: true
+<!--TOC_END-->
+
+
+---
+name: summary
+### About This Chapter
+
+The chapter  examines operating systems from three different perspectives:
+
+- through the set of .greenbold[services] that it provides to .greenbold[users and programmers];
+
+- through the set of .greenbold[interfaces] that it makes available to .greenbold[programmers];
+
+- through its .greenbold[design and implementation], of interest to those study and
+design operating systems.
+
+It covers the following topics:
+
+- Operating system services
+- User interfaces
+- System calls
+- System programs
+- Operating system design and implementation structures
+- System boot
+
+---
+name: objectives
+### Chapter Objectives
+
+
+You should be able to
+
+- identify the services provided by an operating system and whether they are directed
+at users, programmers, or both;
+
+- explain in detail how system calls are used to provide operating system services
+to programs;
+
+- explain how operating systems and system software support program development and
+execution, from  source code to executable image;
+
+- compare and contrast the different structural designs of operating systems, such as
+monolithic, layered, microkernel, modular, and hybrid; and
+
+- explain the process of booting an operating system.
+
+---
+name: system-services
+### Services Provided by the System
+
+Recall from Chapter 1 that the operating system's services can be categorized, for the
+most part, as being in one of the following groups:
+
+- .greenbold[Program execution]
+- .greenbold[I/O operations]
+- .greenbold[File systems]
+- .greenbold[Communication]
+- .greenbold[Error detection and recovery]
+- .greenbold[Protection and  security]
+- .greenbold[Accounting]
+
+as illustrated below.
+
+.center[
+<img src="figures/services.png" width=100% alt="system services">
+]
+
+---
+name: user-interfaces
+### User Interfaces
+
+For a user to access any of these services, some type of user interface to the
+operating system is required. It can be any of:
+
+- .greenbold[Command-Line Interface] (.greenbold[CLI])
+- .greenbold[Graphical User Interface] (.greenbold[GUI])
+- .greenbold[Touch Screen]
+
+These will be explained shortly.
+
+Regardless of which interface is used, users can access all types of services,
+although some may be more useful to users than others.
+
+---
+name: user-services-2
+### Services For Users
+
+- .greenbold[Program execution]: The operating system gives users the ability
+to run applications and programs. This is an important category of service.
+
+- .greenbold[I/O operations]: The applications and programs run by users require input and produce
+output. The operating system provides the environment in which this can happen.
+
+- .greenbold[File systems]: Users and their software can create and delete files and directories,
+read and modify them, rename them, search through them, list properties of them,
+and share and protect them. The operating system provides support for all of this.
+
+- .greenbold[Protection and security]: Users need control of who can access their data. The
+operating system provides security and protection for both files and executing
+programs.
+
+--
+
+Indirectly, users require services such as .greenbold[error detection and recovery] when their
+files get corrupted, or their programs "crash", or worse, when the system itself
+enters some error state.
+
+--
+
+They also require that the system perform .greenbold[accounting] so that they can monitor things
+such as disk usage, memory usage, networking traffic and so on.
+
+--
+
+Lastly, sometimes users explicitly request that the system .greenbold[manage resources], such as by requesting
+that certain programs run with lower priority, or by requesting that certain file
+systems be mounted in restricted modes.
+
+
+---
+name: user-services-3
+### Schematic View of Services
+
+Users obtain services either directly through a user interface such as
+by typing a command in a command-line interpreter, or indirectly, by running
+an application that issues a request.  In the first case, the command is executed by a
+.greenbold[system program]. In the second case, it might be either a system program
+or a .greenbold[system call] that provides the service.
+
+.center[
+<img src="figures/user_services.png" width=100% alt="system services">
+]
+
+---
+name: cli
+### Command-Line Interfaces
+
+A .bluebold[command-line interface], (.bluebold[CLI]) is a type of user interface in which
+a user enters a command by entering plain text followed by a .redbold[newline] character.
+
+- Usually, there is a .redbold[prompt] of some kind to indicate that the user is supposed to enter the command.
+- The text must conform to the syntax expected by the interface.
+- When the newline is entered, the interface tries to run the command.
+
+--
+
+People use the term .greenbold[command-line interpreter] interchangeably although
+there is a difference:
+
+- .redbold[A command-line interpreter is a command line interface, but not vice versa].
+A command line interface is more general - application programs such as MatLab or
+GNU Octave have command line interfaces, but they are not command line interpreters.
+
+--
+
+In the UNIX world, a command line interpreter is called a .bluebold[shell].
+The shell is not just a command line interpreter in UNIX,
+but a .redbold[full-fledged programming language].
+Examples of shells are
+- the .greenbold[.fixed[Bourne-again Shell]] (.fixed[bash]),
+- the .greenbold[.fixed[C Shell]] (.fixed[csh]), and
+- the original .greenbold[.fixed[Bourne shell]] (.fixed[sh]).
+
+---
+name: terminals
+### Command-Line Interpreters and Terminals
+
+To use a CLI, the user must open a .greenbold[terminal] or a .greenbold[pseudo-terminal] window.super[1].
+.footnote[
+1 You can also use a remote login program such as `ssh` to remotely login to a system, in which case you are automatically
+given a shell session. ]
+
+---
+name: terminal-window1
+template: terminals
+count: false
+
+.left-column-large[
+<img src="figures/terminal_window.png" width=100% alt="terminal window">
+]
+
+.right-column-small[
+In Linux, there is an application named `Terminal` that opens a window in which you can run
+a shell such as `bash`.
+]
+
+---
+name: terminal-window2
+template: terminals
+count: false
+
+
+.left-column-large[
+<img src="figures/terminal_window_1.png" width=100% alt="terminal window">
+]
+
+.right-column-small[
+In Linux, there is an application named `Terminal` that opens a window in which you can run
+a shell such as `bash`.
+
+We can enter the `date` command by typing the word "`date`".
+]
+
+---
+name: terminal-window3
+template: terminals
+count: false
+
+
+.left-column-large[
+<img src="figures/terminal_window_2.png" width=100% alt="terminal window">
+]
+
+.right-column-small[
+In Linux, there is an application named `Terminal` that opens a window in which you can run
+a shell such as `bash`.
+
+We can enter the `date` command by typing the word "`date`" followed by newline.
+The current date and time appears.
+]
+
+--
+
+.below-column[
+Apple systems also have a .greenbold[Terminal] application, and Windows
+has both the .greenbold[Powershell] and
+the old standby, `command.exe`, in which you can run DOS commands.
+]
+
+---
+name: references
+### References
+
+1. Hyde, Randall. _The Art of Assembly Language_. No Starch Press. 2003.
+
+2. Abraham Silberschatz, Greg Gagne, Peter B. Galvin. _Operating System Concepts_, 10th Edition.
+Wiley Global Education, 2018.
+
+---
+    </textarea>
+     <script src="js/remark.js" type="text/javascript">
+     </script>
+     <script src="js/remark_conf.js" type="text/javascript">
+     </script>
+
+  </body>
+</html>
