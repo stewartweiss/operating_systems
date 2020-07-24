@@ -192,7 +192,7 @@ In general, a .bluebold[system] is a cohesive collection of interrelated and int
 parts.
 
 A .bluebold[computer system] includes the .greenbold[hardware] and the .greenbold[software] that together
-make the aggregate useable by .greenbold[users], which include not just people, but
+make the aggregate usable by .greenbold[users], which include not just people, but
 machines or other .greenbold["things"].
 
 --
@@ -290,7 +290,7 @@ maximizing the amount of work it performs per unit time.
    - The computer resources should be protected from all possible intentional and unintentional
 abuses.
 
-   - It should be possible to allocate reqources as needed among various users.
+   - It should be possible to allocate resources as needed among various users.
 
 ---
 name: opsys-requirements3
@@ -332,7 +332,7 @@ communication, and security
 
 --
 
-- .greenbold[I/O operations] - providing all I/O services to users and apoplications
+- .greenbold[I/O operations] - providing all I/O services to users and applications
 
 --
 
@@ -385,7 +385,10 @@ To remove all ambiguity in this course,  the  .redbold[operating system is defin
 name: system-programs
 ### System Programs
 
-.bluebold[System programs] are typically the set of programs shipped or
+
+.redbold[This is a fuzzy concept at best].
+
+.bluebold[System programs] are typically programs shipped or
 downloaded when the operating system is installed. .redbold[For example]:
 
 - .greenbold[Software updaters/package managers] - programs that track, download, and install
@@ -405,8 +408,8 @@ in the directories,
 `/usr/sbin`, and
 `/sbin`.
 
-Most of these programs can only be invoked as commands on the
-command line in a terminal window, but some can (also) be invoked through a graphical
+Almost all of these programs can only be invoked as commands on the
+command line in a terminal window, but there are some that can (also) be invoked through a graphical
 user interface such as `Gnome` using menus or clickable icons.
 
 --
@@ -559,7 +562,7 @@ and/or may require that the CPU take some specific action in response to specifi
 events.
 
 .redbold[Example]. When the user types a "Control-C" on the keyboard while a terminal
-window has focus and a program is running in the terminal's commmand line (the shell),
+window has focus and a program is running in the terminal's command line (the shell),
 that program is typically terminated. Somehow, that Control-C must be detected
 and the fact of its occurrence transmitted to a program that can terminate the
 running program. A lot has to happen to make this work.
@@ -1134,10 +1137,10 @@ and rewrite them is limited. Ordinary DVD disks can store no more than a few gig
 and Blu Ray disks a few hundred gigabytes.
 
 In contrast a magnetic tape can store 800GB and many systems use robotic
-libraries to perform backups to tape and restorals from tape.
+libraries to perform backups to tape and restores from tape.
 
 
-One can also purchase hard disks that are removeable and external. These can be
+One can also purchase hard disks that are removable and external. These can be
 used for backing up a system. These external disks have the same range of capacities
 as internal disks and are just slightly slower because they are accessed through a
 slower bus than the internal disks.
@@ -1610,11 +1613,11 @@ or a mouse clicked. If there is a single CPU, how is this possible?
 
 --
 
-.greenbold[Timesharing].
+.greenbold[Time-sharing].
 
 --
 
-.bluebold[Timesharing] is a type of multiprogramming in which each program in memory
+.bluebold[Time-sharing] is a type of multiprogramming in which each program in memory
 gets a very small slice of time on the CPU, perhaps no more than a few milliseconds,
 in some well-defined order. The time slices are so small that you cannot see
 that the switches take place.
@@ -1623,15 +1626,15 @@ You get a chance to .greenbold[interact] with each program.
 
 --
 
-.redbold[Timesharing is what makes interactive computing environments possible],
+.redbold[Time-sharing is what makes interactive computing environments possible],
 and the term is usually associated with interactive computing, although it is
 more general than this.
 
 ---
 name: timesharing
-### Timesharing Infrastructure
+### Time-sharing Infrastructure
 
-Timesharing requires more infrastructure in the operating system:
+Time-sharing requires more infrastructure in the operating system:
 
 --
 
@@ -1658,17 +1661,17 @@ structures to make this all possible.
 name: multitasking
 ### Multitasking
 
-.bluebold[Multitasking] is a specific form of timesharing in which the running programs,
+.bluebold[Multitasking] is a specific form of time-sharing in which the running programs,
 which we call .greenbold[processes], or .greenbold[tasks], may be cooperating to
 solve a single problem, sharing resources to accomplish this.
 
-Timesharing is slicing up the CPU's time into small pieces and giving
+Time-sharing is slicing up the CPU's time into small pieces and giving
 them to processes, whether or not they are working together.
 
-Multitasking is the term generally used when the processes are working together.
+Multi-tasking is the term generally used when the processes are working together.
 
 Multitasking includes a form of parallel computing in which programs are
-multithreaded, and the individual threads share the CPU.
+multi-threaded, and the individual threads share the CPU.
 
 
 ---
@@ -1752,35 +1755,33 @@ not have privilege, such as reading from a device.
 --
 
 - The system call causes a .greenbold[trap], which causes a transfer to a
-kernel .greenbold[system call service routine] that handles all system calls,
+kernel .greenbold[system call handler] that handles all system calls,
 and causes the mode bit to be set to 0 (kernel mode).
-(In Linux this system call service routine is named `system_call()`.)
+(In Linux this system call handler is written in assembly language.)
 
 --
 
-- The .greenbold[system call service routine]  saves registers,
-determines which system call was made, and loads the code that performs
-the service. When that code finishes, it returns to the system call service routine.
+- The .greenbold[system call handler]  saves registers,
+determines which system call was made, and runs the code that performs
+the service. When that code finishes, it returns to the system call handler.
 
 --
 
-- When the system call service routine is finished, the mode bit is set to 1 (user mode)
+- When the system call handler is finished, the mode bit is set to 1 (user mode)
 and user code is run again.
 
 ---
 name: syscall-graphic
-### Depiction of System Call in Linux
+### System Call Schematic in Linux
 
-The following image depicts the sequence of events that take place when a `C`
-program calls the Linux `read()` system call. The compiler translates it to a
-call  to `_libc_read()`.
+The figure below illustrates conceptually what happens when a user process
+requests services from the kernel by using a system call. A trap takes place,
+the mode is changed from user mode to kernel mode, the kernel executes, and when
+it returns, the mode is changed back to user mode and user code resumes.
+
 
 .center[
-<img src="figures/ksys-figure1.png" width=80% alt="system call"/>
-]
-
-.footnote[
-Image from Alessandro Rubini, at http://www.linux.it/~rubini/docs/ksys/
+<img src="figures/dual-mode.png" width=80% alt="dual mode"/>
 ]
 
 ---
@@ -2328,7 +2329,7 @@ by direct examination of code.
 name: references
 ### References
 
-1. Hyde, Randall. _The Art of Assembly Language_. No Starch Press. 2003.
+1. Randall Hyde. _The Art of Assembly Language_. No Starch Press. 2003.
 
 2. Abraham Silberschatz, Greg Gagne, Peter B. Galvin. _Operating System Concepts_, 10th Edition.
 Wiley Global Education, 2018.

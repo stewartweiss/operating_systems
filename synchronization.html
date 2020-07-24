@@ -142,7 +142,7 @@ name:toc
 
 ---
 name: prereqs
-### Prequisite Reading
+### Requisite Reading
 
 Before reading these slides, you should be familiar with
 
@@ -414,7 +414,7 @@ This means that more than one process executes in __kernel mode__ at a time.
 global data structures, the code is re-entrant.
 Such functions are called .redbold[re-entrant functions].
 
-- Alernatively, if the kernel functions modify shared data structures, then some other kind of
+- Alternatively, if the kernel functions modify shared data structures, then some other kind of
 mechanism is needed to ensure that race conditions do not occur.
 This is what we are about to study.
 
@@ -1858,9 +1858,9 @@ We illustrate with increment next.
 
 ---
 name: atomic-inc
-### Implementing Atomic Incrrement
+### Implementing Atomic Increment
 
-The function below implements an atomic .rebold[increment] operation using the GNU
+The function below implements an atomic .redbold[increment] operation using the GNU
 library's compare-and-swap function, named `__sync_val_compare_and_swap`.
 It requires including the header file `stdatomic.h`.
 
