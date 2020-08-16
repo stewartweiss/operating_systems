@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-    <title>Introduction to Operating Systems</title>
+    <title>Operating System Structures</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
     <link href="css/slides.css" rel="stylesheet" type="text/css" />
@@ -68,10 +68,10 @@ name:toc
 [System Call Parameter Passing](#syscall-parameters)<br>
 [Under the Hood: System Calls](#syscall-implementation)<br>
 [Illustration of the Complete Flow](#syscall-complete-flow)<br>
-[Flow of .fixed[read] System Call in Linux](#syscall-read)<br>
 ---
 ### Table of Contents
 
+[Flow of .fixed[read] System Call in Linux](#syscall-read)<br>
 [Categories of System Calls](#syscall-types)<br>
 [Process Control](#process-syscalls)<br>
 [File Management](#file-syscalls)<br>
@@ -80,7 +80,42 @@ name:toc
 [User and Group Management](#user-syscalls)<br>
 [Communication and Synchronization](#communication-syscalls)<br>
 [Protection](#protection-syscalls)<br>
-[System Programs](#sys-programs)<br>
+[About System Programs](#sys-programs)<br>
+[System Programs versus Applications](#sysprograms-apps)<br>
+[Categorizing System Programs](#sysprog-categories)<br>
+[Categorizing System Programs (2)](#sysprog-categories-1)<br>
+[Program Development](#prog-development)<br>
+[Software Libraries](#libraries)<br>
+[Steps in Building an Executable: Compilation](#compiling)<br>
+[Steps in Building an Executable: Linking, Part 1](#linking)<br>
+[Steps in Building an Executable: Linking, Part 2](#linking-2)<br>
+[Steps in Building an Executable: Dynamic Linking](#dynamic-linking)<br>
+[Dynamic versus Static Linking](#dynamic-vs-static)<br>
+[Advantages of Static Linking](#dynamic-vs-static-2)<br>
+[From Source to Executable, Visualized](#build-visualized)<br>
+[Portability](#portability)<br>
+---
+### Table of Contents
+
+[Solutions to Creating Portable Executables](#portability-solutions)<br>
+[Operating System Design](#opsys-design)<br>
+[Design Principles](#design-principles)<br>
+[How Systems Evolve](#unix-derivatives)<br>
+[Mechanisms and Policies](#mechanism-policy)<br>
+[Programming Languages for Implementation](#implementation)<br>
+[Operating System Structure](#opsys-structure)<br>
+[Monolithic Structure: UNIX](#monolithic-1)<br>
+[Monolithic Structure: Linux](#monolithic-2)<br>
+[Layered or Ring Structure](#layered)<br>
+[Microkernel Foundations](#microkernel-foundation)<br>
+[Benefits of Microkernels](#microkernel-advantages)<br>
+[The Early Microkernels](#microkernels)<br>
+[Modern Microkernels](#microkernels-modern)<br>
+[Loadable Kernel Modules](#modules)<br>
+[Hybrid Operating Systems](#hybrids)<br>
+[macOS](#macos-x)<br>
+[Bootstrapping the System: Loading the Kernel](#system-boot)<br>
+[Bootstrapping the System: After Kernel Load](#system-boot-2)<br>
 [References](#references)<br>
 <!--TOC_END-->
 
@@ -328,6 +363,15 @@ has both the .greenbold[Powershell] and
 the old standby, .fixedblue[command.exe], in which you can run DOS commands.
 ]
 
+???
+have them login to eniac and then a cslab host using ssh.
+run a few simple commands:
+pwd, ls, ls -a,
+
+
+
+
+
 ---
 name: command-implementation
 ### Command Implementation
@@ -352,6 +396,11 @@ In UNIX and UNIX-like systems,  a command can be implemented in one of two ways:
 
 There are a handful of commands that are implemented in both ways, such as
 the .fixedblue[echo] , .fixedblue[kill],  and .fixedblue[pwd] commands.
+
+???
+Stay logged in, use the type command to determine the types of various
+commands
+and use file to identify non-built-ins
 
 ---
 name: gui
@@ -393,7 +442,7 @@ windows, which can represent files, directories, and applications.
 or by voice commands.
 The cursor is used to execute commands,  select elements, draw, etc.
 
-- Most systems provide a GUI, such as Microsoft's Windows, Apple's Mac OS X, and
+- Most systems provide a GUI, such as Microsoft's Windows, Apple's macOS, and
 Linux's Gnome, or KDE.
 
 ]
@@ -528,7 +577,7 @@ But it is true that almost every system call in Linux has a wrapper function in 
 The three most common APIs are the
 - .bluebold[WinAPI] for Windows (.bluebold[Win64] for 64-bit Windows),
 -  .bluebold[POSIX API] for POSIX-based systems, which includes
-virtually all versions of UNIX, Linux, and Mac OS X, and
+virtually all versions of UNIX, Linux, and macOS, and
 - .bluebold[Java API] for the Java virtual machine (JVM)
 
 ---
@@ -644,6 +693,11 @@ The page shows that .fixedblue[read] has three parameters:
 
 It returns a  .fixedblue[ssize_t] result, which is the number of bytes actually read.
 
+???
+Have them copy the cp.c program into their home directories using the system
+cp command. Then use a simple editor to modify buffer size and try to recompile.
+
+
 ---
 name: syscall-implementation-1
 ### System Call Implementation
@@ -710,7 +764,7 @@ name: syscall-implementation
 
 Different operating systems implement system calls in different ways. We describe
 how they are implemented in Linux, which is roughly how they are implemented in
-MacOS X. The Windows implementation is different.
+macOS. The Windows implementation is different.
 
 --
 
@@ -885,7 +939,7 @@ Some types of services  falling into this category are:
 
 --
 
-This is an area that this course does not explore.
+We do not cover this topic further.
 
 
 ---
@@ -906,9 +960,8 @@ Some types of services  falling into this category are:
 
 --
 
-This area is related to security and system administration. This course does
-not cover this material.
-
+There is some overlap here with security and system administration, but again
+this is material we will not cover.
 
 ---
 name: communication-syscalls
@@ -1052,27 +1105,832 @@ name: sysprog-categories-1
 name: prog-development
 ### Program Development
 
-We turn our attention to a special collection of tools - namely those used for
+We turn our attention to a special collection of software tools - namely those used for
 program development. .redbold[Why do we single these out?]
 
 --
 
 - Although computers now are used more by non-programmers than programmers,
-the earliest users were programmers, and much of the design and development
-was targeted towards making their development environments as productive as possible.
+the earliest users were programmers, and much of system software design
+was targeted towards making program development environments as productive as possible.
 
 --
 
 - Program development tools such as
-editors, preprocessors, compilers, linkers, debuggers, profilers, dynamic linker/loaders
+.greenbold[editors], .greenbold[preprocessors], .greenbold[compilers],
+.greenbold[linkers], .greenbold[debuggers], .greenbold[profilers], and .greenbold[dynamic linker/loaders]
 have long been integrated into operating system packages.
 
 --
 
-- Understanding the full journey from source code to a running process makes
+- Understanding all of the steps that turn source code into a running process makes
 it easier to understand the reasons for many decisons in the design of operating systems.
 
 
+---
+name:libraries
+### Software Libraries
+
+Most programs are built from multiple source code files and also contain code that
+references one or more .greenbold[libraries].
+
+- A .bluebold[software library], also called a .bluebold[program library],
+is a file containing compiled code and possibly data that can be used by
+other programs.
+
+- .redbold[A library is not a stand-alone executable] – you can not “run” a library.
+It typically contains functions, type definitions, and constants
+that other programs can use.
+
+- You have been using software libraries since your very first “Hello World” program,
+whether you knew it or not.
+Whatever function that you used to print on the screen was contained
+in a library, most likely either the C standard I/O library (if you used .fixedblue[printf],
+for instance), or the C++ .fixedblue[iostreams] library.
+
+
+---
+name: compiling
+### Steps in Building an Executable: Compilation
+
+Suppose that the program to be build consists of the following files:
+```bash
+main.c  utilities.c  mathstuff.c  io.c
+```
+and the only dependencies among these files are that
+.fixedblue[main.c] contains references to symbols in al
+of the other source code files.
+
+Suppose also that there are external dependencies:
+.fixedblue[io.c] contains calls to the .fixedblue[C] standard  library and
+.fixedblue[mathstuff.c] makes calls to the .fixedblue[C] math library.
+
+The first step is  to compile all source code files to produce corresponding .redbold[relocatable] ]object files
+as follows:
+```bash
+   gcc -c main.c
+   gcc -c utilities.c
+   gcc -c mathstuff.c
+   gcc -c io.c
+```
+which, assuming no errors, creates
+```bash
+main.o  utilities.o  mathstuff.o  io.o
+```
+---
+name: linking
+### Steps in Building an Executable: Linking, Part 1
+
+The file .fixedblue[main.o] is not executable, and it contains references to
+symbols in the other files that are not resolved.
+(For example, .fixedblue[main()] might call .fixedblue[output()] in
+.fixedblue[io.c] but in .fixedblue[main.o] there is no
+jump to this function yet; it is just a placeholder
+for a jump.)
+
+Similarly, .fixedblue[mathstuff.o] and .fixedblue[io.o] have unresolved symbols whose
+definitions are in .fixedblue[C] libraries.
+
+The purpose of .greenbold[linking] is to combine these  relocatable object files into a
+single binary executable file, replacing all unresolved references by actual
+addresses.
+
+This will usually require including the library files that contain the definitions
+needed by the program, such as the math library file.
+
+In theory we need to run the linker, passing the arguments
+```bash
+main.o  utilities.o  mathstuff.o  io.o
+```
+.redbold[as well as the names of all libraries to be included].
+
+---
+name: linking-2
+### Steps in Building an Executable: Linking, Part 2
+
+Fortunately, most compilers, including .fixedblue[gcc], will determine from the
+command line arguments that only the linker needs to be run,
+so to link these files and create the executable program,
+we can run  .fixedblue[gcc] again, specifying  the name .fixedblue[myprog] for the output file
+and supplying it with explicit instructions to link in the math library:
+```bash
+   gcc -o myprog main.o utilities.o mathstuff.o io.o  `-lm`
+```
+- The highlighted part is the instruction to link to the math library.super[1].
+
+.footnote[
+1 The math library in POSIX systems is named .fixedblue[libm.a] or .fixedblue[libm.so] and the name passed
+to the .fixedblue[-l] option is the part of the name between ".fixedblue[lib]" and the period,
+hence just ".fixedblue[m]".
+]
+
+
+- We do not need to tell .fixedblue[gcc] to link to the .fixedblue[C] standard library, because
+it will do this by default.
+
+
+- .fixedblue[gcc] combines and links all files, resolving the references.
+
+- It also links the required libraries into the executable, perhaps at this
+point in time, or possibly at run-time when the libraries are actually needed.
+Which does it do?
+
+--
+
+.redbold[It depends.]
+
+---
+name: dynamic-linking
+### Steps in Building an Executable: Dynamic Linking
+
+A .bluebold[loader] is a program that loads a binary executable file into memory.
+
+The loader places the executable in memory and  assigns final addresses
+to all program code and data so that it can run correctly in the location at which it was loaded.
+This is possible because its code is .greenbold[relocatable code].
+
+In older systems,  the default was that the libraries were combined into the program executable by the
+linker when it created the executable. This is call .bluebold[static linking].
+
+Modern systems usually default to linking libraries at runtime, which is called
+.bluebold[dynamic linking].
+
+There are two copies of a library, a statically-linkable  and a dynamically-linkable
+copy. In UNIX, static libraries end in ".fixedblue[.a]" and dynamic libraries,
+called .greenbold[shared objects], end in ".fixedblue[.so]". E.g,
+.fixedblue[libm.a] and .fixedblue[libm.so].
+
+Modern Linux defaults to dynamic linking. Hence
+```bash
+   gcc -o myprog main.o utilities.o mathstuff.o io.o  -lm
+```
+causes the linker to include stubs in the executable so that when a call to the math
+library is executed, the math library is loaded into memory if it is not already there,
+and the addresses are resolved, and then the jump is made.
+
+---
+name: dynamic-vs-static
+### Dynamic versus Static Linking
+
+Why is dynamic linking preferred, and why does the UNIX world call these dynamically linkable
+libraries "shared objects"?
+--
+ .redbold[The answers are related].
+
+--
+
+- Without dynamic linking, every process has a copy of the library embedded in it.
+This means that each process takes up more memory and more disk space,
+so memory and disk contain multiple copies of many libraries.
+
+--
+
+- Because the process's size is larger, it takes longer to load.
+
+--
+
+- Because each process is larger, fewer processes can be in memory at a time,
+reducing the ability of the operating system to keep the CPU busy at all times.
+
+--
+
+In a later chapter, you will see that these dynamically linkable libraries
+can be designed so that the code is shareable (it is read-only), so only one copy in
+memory is needed.
+
+Advantages of dynamic linking are thus:
+
+-  faster load time
+-  better use of memory, keeping process code smaller.
+- when libraries change, the programs do not need recompilation or rebinding.
+
+---
+name: dynamic-vs-static-2
+### Advantages of Static Linking
+
+- Executables whose libraries are all statically linked are portable - they can
+be run on any machine with the same architecture - because they do not require
+the presence in memory of the exact library that they were compiled against.
+
+- Statically-linked programs are faster.
+There is a performance cost in references to shared library routines
+of about eight machine cycles per reference.super[1].
+
+.footnote[
+1 IBM Knowledge Center. https://www.ibm.com/support/knowledgecenter/en/ssw_aix_71/performance/when_dyn_linking_static_linking.html
+]
+
+- There are other minor advantages that are related to concepts of virtual memory, a topic
+we will cover in a later chapter.
+
+---
+name: build-visualized
+### From Source to Executable, Visualized
+
+.left-column-small[
+The figure to the right summarizes the steps that take place
+to create an executable from source code, with all of its dependencies,
+and run it.
+
+Various system programs are used to achieve this, such as
+compilers, linkers, and loaders.
+
+
+]
+.right-column-large[
+<img src="figures/build.png" width=90%>
+]
+
+---
+name: portability
+### Portability
+
+.redbold[An executable built on one system is not likely to be executable on another system.]
+
+--
+
+Each operating system has a binary format for applications that dictates
+the layout of the header, instructions, and variables.
+
+--
+
+- The standard format for executable and relocatable files in Linux is
+.bluebold[ELF], short for .bluebold[Executable and Linkable Format].
+There are two different formats, one for files that are executable and one
+for files that can be linked into executables such as library files.
+
+- Windows systems use the .bluebold[Portable Executable] (.bluebold[PE])
+format, and macOS uses the .bluebold[Mach-O] format.
+
+--
+
+Applications are built against .bluebold[API]s, which specify how the source code
+should be written.
+But applications built on a given machine make system calls to that machine's
+kernel, and contain machine code output by the compiler for the given
+architecture.
+
+The ELF  does not specify that the code must be for a specific computer architecture.
+This means that the compiler and linker can produce an executable that complies with the
+ELF but not that the code can run on different hardware platforms.
+
+--
+
+.bluebold[Portability] is the extent to which an application is  able to run
+on multiple platforms.
+
+---
+name: portability-solutions
+### Solutions to Creating Portable Executables
+
+1. Compile and link according to an .bluebold[ABI]:
+
+  - An .bluebold[Application Binary Interface] (.bluebold[ABI]) is
+the architecture equivalent of an API - it defines how the
+components of the binary code can interface with a given kernel and CPU architecture.
+
+  - This is not done very much.
+
+1. Write the code in an interpreted language such as Python.
+Such code runs slowly.
+
+1. Write code in a language that uses a virtual machine, such as the Java Runtime Environment.
+Again, these programs are slower.
+
+1. The application can be ported manually to each operating system  on which it will run.
+This is time consuming and must be redone for each new version of the application.
+
+---
+name: opsys-design
+layout: false
+class: center, middle, inverse
+## Operating System Design and Implementation
+We give a brief overview of the design and implementation of existing operating
+systems.
+
+
+---
+template: tinted-slide
+layout: true
+
+---
+name: opsys-design
+### Operating System Design
+
+Operating system design has been much less a scientific endeavor than an
+engineering one.
+
+An operating system is caught between the conflicting requirements of the users,
+the hardware platform,  the system developers who must design, create,
+and maintain the software, and the maintainers who must operate and maintain the
+system every day.
+
+--
+
+The hardware affects the design greatly:
+
+- The Android and iOS operating systems are
+designed for small, low-power, mobile, touch screen devices such as smartphones.
+
+- macOS is designed for Apple's desktop, laptop, and home computers, and much development
+effort was put into its graphical user interfaces.
+
+- UNIX was designed to run on hardware with support for dual-mode initially, which
+influenced its protection policies and mechanisms, whereas early Windows systems
+were designed for processors without dual-mode support, which led to a radically different
+design.
+
+Thus, the internal structures of operating systems vary greatly as a result of their
+different requirements.
+
+---
+name: design-principles
+### Design Principles
+
+Various laws and principles have been used in the design of operating systems
+(and other large software) over the years. Some of these are excerpted from [1].
+
+
+.footnote[
+1 Peter Denning. "Fifty Years of Operating Systems", _CACM_  March 2016. V. 59 (3)
+]
+
+--
+
+- .bluebold[Information hiding]:<br>
+Separating the methods that implement a particular component from the design
+of that component itself makes system maintenance and modification easier.
+
+--
+
+- .bluebold[Levels or layers of abstraction]:<br>
+System software can be simplified and verified by organizing the functions
+as a hierarchy that can make only downward calls and upward returns.
+
+--
+
+- .bluebold[Virtual machines]:<br>
+A set of related functions can be implemented as a simulation of a
+machine whose interface is an “instruction set” and whose internal
+structure and data are hidden.
+
+--
+
+- .bluebold[Principle of least privilege]:<br>
+In a particular abstraction layer of a computing environment, every enitity
+(process, user, program, etc.) must have only the privilege needed to access only the information
+and resources that are necessary for its legitimate purpose.
+
+
+--
+
+- .bluebold[Principle of locality]:<br>
+Processes use small subsets of their address spaces for extended
+periods.
+
+---
+name: unix-derivatives
+### How Systems Evolve
+
+Changes in requirements lead to different operating systems. As an example, look at this
+subset of the different operating systems derived from the original UNIX,
+written by Ken Thompson and Dennis Ritchie in  1969.
+
+.center[
+<img src="figures/Unix_timeline.png" width=70%>
+]
+
+.footnote[
+Figure by Guillem, Wereon, Hotmocha Christoph S. Redrawn from
+Image:Unix.png, https://commons.wikimedia.org/w/index.php?curid=1667764.
+License: In the public domain.
+]
+
+---
+name: mechanism-policy
+### Mechanisms and Policies
+
+A .bluebold[policy] is a set of rules that, under prescribed conditions,
+.redbold[guides and determines present and future decisions].
+
+A .bluebold[mechanism] is a process, technique, or system for .redbold[achieving a result].
+
+--
+
+Policies state .redbold[what] things must be done, whereas mechanisms describe .redbold[how] to do them.
+
+- Requiring that user processes must not execute certain instructions is a policy.
+- Using a hardware mode bit and traps is a mechanism.
+
+--
+
+In any software engineering endeavor,
+.redbold[separation of policy from mechanism is a very important principle].
+In operating system design, this principle plays an important role.
+
+--
+
+It is best if mechanisms are flexible enough to work across a range of
+policies. If so,
+
+- When a policy changes, the mechanism may only need adjustments.
+- Mechanisms can be changed without needing to change policies.
+
+--
+
+Microsoft did not make the separation in Windows: mechanism and policy are tied together
+in the  system to enforce their global "look and feel".
+
+In contrast, Linux is an open source operating system;  anyone can make changes to
+how various features are implemented, i.e., change mechanisms, and
+can propose changes to what parts of the system should do.
+
+---
+name: implementation
+### Programming Languages for Implementation
+
+
+.redbold[In what languages are operating systems written?]
+
+--
+
+Early operating systems were written in assembly language. That changed over time.
+
+--
+
+The first operating system to be written exclusively in a high-level language
+(ESPOL) was the .bluebold[Burroughs MCP], in 1961.  Others followed
+in PL1 and other systems languages.
+
+--
+
+UNIX was the first operating system to be implemented in .fixedblue[C].
+
+--
+
+Now, most operating systems are written in a mix of assembly and .fixedblue[C] and/or .fixedblue[C++].
+
+- The kernel is usually written in assembly and .fixedblue[C]. (Android and Linux are examples.)
+
+- The libraries are written in .fixedblue[C] and/or .fixedblue[C++].
+
+- Some systems programs are also written in scripting languages such as
+PERL, Python, and shell langauges such as .fixedblue[bash].
+
+--
+
+The drawback of implementing an operating system in a higher level language
+is reduced speed, although two facts ameliorate this:
+- compilers have gotten very good at optimizing code, and
+- modern processors use hyperthreading to reduce the
+effects of memory delays caused by dependencies in the code.
+
+---
+name: opsys-structure
+### Operating System Structure
+
+By the .bluebold[structure] of an operating system, we mean the arrangement and
+interrelationships among its separate .redbold[executable modules].
+
+The question is not how its .greenbold[source code files] are written and
+organized, but about how the binary files are interrelated.
+
+- The system could be in a single file, using a single address space.
+
+- It could be in multiple files, designed in such a way that they form a sequence
+of layers or rings.
+
+- It could be designed using very small files, each interacting with each other
+using message-passing.
+
+---
+name: monolithic-1
+### Monolithic Structure: UNIX
+
+The simplest structure is a .bluebold[monolithic] one:
+
+- All of the functionality of the kernel is in a single, static binary file that
+runs in a .redbold[single address space].
+
+- Early versions of UNIX were monolithic, as were early versions of Linux. The structure of the
+original UNIX operating system is diagrammed below.
+
+.center[
+<img src="figures/unix_structure.png"  width=80% alt="unix structure">
+]
+
+The three levels in the kernel correspond roughly to what calls what: calls go from higher
+components to lower ones.
+
+---
+name: monolithic-2
+###  Monolithic Structure: Linux
+
+Linux is also monolithic, but it also  uses dynamically loadable
+kernel modules, described soon. The division of tasks and layering are roughly the same as the original UNIX
+system.
+
+The much more detailed illustration below of the structure of the Linux kernel is
+based on the description of it in _Modern Operating Systems_ by Andrew Tanenbaum.
+
+
+
+.center[
+<img src="figures/linux_structure.svg"  width=80% alt="unix structure">
+]
+.footnote[
+Image by ScotXW. CC BY-SA. https://upload.wikimedia.org/wikipedia/commons/6/65/Simplified_Structure_of_the_Linux_Kernel.svg
+]
+---
+name: layered
+### Layered or Ring Structure
+
+In a layered structure, the operating system is divided into a number of .greenbold[layers],
+with successively higher layers  built upon and dependent upon lower layers.
+
+Equivalently, this structure can be  viewed as a set of .greenbold[concentric rings], with
+outer rings built upon and dependent upon inner rings.
+We prefer the ring visualization.
+
+.left-column[
+The innermost ring, called .greenbold[ring 0], is the hardware;
+the outermost ring is the set of user interfaces.
+In between are the drivers, kernel, and so on.
+
+There are no commercial operating systems that adhere to this model
+strictly, and there are no commercial operating systems in which each ring is
+in its own address space.
+
+But the idea of rings has been used as a design principle, often only with respect
+to principles of protection. .fixedblue[Multics] was such a system, for example.
+
+]
+
+.right-column[
+<img src="figures/ring_structure.png" width=100% alt="ring structure" >
+]
+
+---
+name: unix-rings
+### UNIX as a Ring Structure
+
+UNIX was created by computer scientists who worked on the MULTICS project
+and decided it was too complex. But they borrowed ideas from it.
+
+.left-column[
+Early UNIX can be viewed as having a ring structure, as shown to the right.
+The kernel is in Ring 0, devices drivers and the system call interface, in
+Ring 1. The file system, network services, and other services, were in Ring 2.
+
+User processes are not part of the operating system, and are shown
+outside the outermost ring. The shell programs and other utilities that run in
+user mode are also outside.
+]
+
+.right-column[
+<img src="figures/unixos.png" width=100% alt="UNIX rins">
+]
+---
+name: microkernel-foundation
+### Microkernel Foundations
+
+Operating systems started out small.
+
+--
+
+Over the years, they grew larger and larger, because
+new device drivers, protocol stacks, file systems and other low-level systems
+were incorporated into the monolithic kernel.
+
+--
+
+The disadvantage of incorporating these services into a single large kernel is
+that modifying them requires careful work to prevent side effects in the kernel, and
+being able to start and stop services without changes to the state of the kernel
+requires design changes within the kernel itself.
+
+--
+
+And large kernels are also hard to maintain in general.
+
+--
+
+In 1969, Danish/American computer scientist __Per Brinch Hansen__
+and his team of developers created the .bluebold[RC 4000 Multiprogramming System]
+using  principles that a decade later would be called a .bluebold[microkernel design].
+
+--
+
+The idea was to make the kernel as small as possible, but containing only absolutely
+essential functionality that needed to run in privileged mode. All other functionality
+was put into separate programs that ran in user mode, communicating through
+message-passing.
+
+---
+name: microkernel-advantages
+### Benefits of Microkernels
+
+The advantages of creating a microkernel with only essential functions and everything
+else in separate programs, rather than creating a large monolithic kernel, are that:
+
+--
+
+- it is easier to extend a microkernel-based operating system because much of the extension would be in separate
+programs rather than inside the kernel;
+
+--
+
+- it is easier to port the operating system to new architectures because there  is
+less code to modify;
+
+--
+
+- it is more reliable because the kernel is smaller and easier to debug and maintain;
+
+--
+
+- it is more secure because the smaller kernel is easier to analyze for security flaws,
+and satisfies .redbold[the principle of least privilege].
+
+---
+name: microkernels
+### The Early Microkernels
+
+The earliest microkernel had an _inter-process communication system_, _process scheduling_,
+and _memory management_.
+.redbold[All other services, such as file systems, device drivers, and application interface, were in user-space processes],
+as illustrated below:
+
+
+.center[
+<img src="figures/microkernel_comparison_1.svg" width=70%  alt="microkernel" >
+]
+
+.footnote[
+Image in the Public Domain, from https://commons.wikimedia.org/wiki/File:OS-structure.svg
+]
+
+--
+
+One example of an early microkernel operating system was .bluebold[MINIX], designed and
+built by __Andrew S. Tanenbaum__, a  professor
+of computer science at the _Vrije Universiteit Amsterdam_ in the Netherlands.
+MINIX 1.0 was a UNIX-derived operating system designed to run on the Intel 8088
+processor, and was .greenbold[system-call compatible] with .bluebold[Seventh Edition Unix].
+Its source code was in his book, _ Operating Systems: Design and Implementation_.
+
+???
+have them read about the Torvalds-Tanenbaum debate,
+at https://en.wikipedia.org/wiki/Tanenbaum%E2%80%93Torvalds_debate
+---
+name: microkernels-modern
+### Modern Microkernels
+
+
+.redbold[The Mach Microkernel].
+The most well-known example of a microkernel-based operating system today is the
+.bluebold[Mach] kernel, which was developed at .bluebold[Carnegie Mellon University] and
+is used in several operating systems, the most well known being .bluebold[macOS].
+
+The Mach kernel is like the earlier ones, in that the kernel contains an IPC mechanism,
+memory management, and a process scheduler, and most everything else is in user-space
+programs that interact with the kernel through message-passing.
+
+All communication takes place between user modules using message passing.
+
+--
+
+.redbold[Other Microkernels].
+
+There are other operating systems based on microkernels. One, inspired
+by earlier ones, is .bluebold[Redox], an open source, Unix-based operating system written in .fixedblue[Rust].
+It can be found on [Github](https://github.com/redox-os/redox).
+
+--
+
+Another is .bluebold[sel4],
+a high-assurance, high-performance operating system microkernel.
+It is a formally verified microkernel,
+available as open source on [GitHub](https://github.com/seL4/)
+It is supported by the [seL4 Foundation](https://sel4.systems/Foundation/About/).
+
+---
+name: modules
+### Loadable Kernel Modules
+
+An alternative that offers a compromise between microkernels and monolithic
+systems is to use .greenbold[loadable kernel modules].
+
+The idea is to keep the kernel small, but not as small as a microkernel.
+The kernel provides core services, and the other services are loadable
+dynamically as needed, while the kernel is running.
+
+The other services are provided in kernel modules, which are executable
+files that can be loaded and linked into the kernel at run-time.
+
+Linux uses loadable kernel modules for a variety of services,
+ranging from  device drivers to file systems to cryptographic services.
+They can be inserted into and removed from the kernel  from the command line.
+
+
+---
+name:hybrids
+### Hybrid Operating Systems
+
+Most operating systems are hybrids of two or more models. For example, Linux is
+a monolithic system but it also uses loadable kernel modules.
+
+Windows operating systems are mostly monolithic but provides support for separate subsystems
+(which they call .greenbold[operating-system personalities]) that run as user-mode processes.
+
+Some operating systems were created as hybrids, the most noteable example being
+.bluebold[macOS] and .bluebold[iOS].
+
+macOS is a complex, partially layered system, built on top of the .greenbold[Darwin] kernel.
+Darwin is the core of macOS, consisting of an open source Mach microkernel and elements of FreeBSD UNIX.
+It is an open-source, mostly .greenbold[POSIX-compliant], Unix-like operating system.
+
+---
+name: macos-x
+### macOS
+
+The macOS architecture is layered. The GUI is the top layer. Below that
+are various APIs used by programs to communicate with lower layers, such as .greenbold[Cocoa],
+.greenbold[BSD], and .greenbold[Quicktime].
+The Darwin kernel is the core, and is composed of a microkernel and elements
+of BSD.
+
+.center[
+<img src="figures/Mac_OS_X_architecture.svg" width=55% alt="MacOS">
+]
+
+.footnote[
+Image from User: Sassospicco, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=879049
+]
+
+---
+name: system-startup
+layout: false
+class: center, middle, inverse
+## System Start-Up
+Answering the question, "what happens between turning on power and being able to login to a computer?'
+
+---
+template: tinted-slide
+layout: true
+---
+name: system-boot
+### Bootstrapping the System: Loading the Kernel
+
+When power is turned on, the operating system kernel must eventually be loaded into
+memory and run.
+
+.redbold[How does the hardware know where the kernel is or how to load that kernel?]
+
+--
+
+The process of starting a computer by loading the kernel is called as .bluebold[bootstrapping]
+or just .bluebold[booting] the system.
+Several distinct steps tale place to boot a system.
+
+--
+
+1. When a machine is powered on,  execution starts at a small .greenbold[boot loader]  at a fixed location in
+nonvolatile firmware, either the  .greenbold[BIOS] in older systems,
+or .greenbold[UEFI] (.greenbold[Unified Extensible Firmware Interface]) in newer systems.
+
+--
+
+1. The boot loader usually runs diagnostic tests such as inspecting memory and the CPU and discovering devices.
+If all tests pass, it loads a second boot loader, which is located at a fixed
+disk location called the .bluebold[boot block].
+
+--
+
+1. The program stored in the boot block loads the kernel into memory.
+  - The Linux kernel image is a compressed file that must be  extracted
+    after it is loaded into memory. Being compressed makes loading faster.
+
+  - .bluebold[GRUB] is an open source bootstrap program for Linux and UNIX systems.
+    Boot parameters are in a GRUB configuration file, and GRUB allows changes to
+    be made at boot time, such as selecting which kernel to load.
+
+---
+name: system-boot-2
+### Bootstrapping the System: After Kernel Load
+
+After the kernel is loaded, the bootstrap program transfers control to it.
+
+- What happens next is kernel-dependent. Most systems will load drivers,
+start services, and eventually display a user interface to allow users to login.
+
+- The Linux kernel loads necessary drivers, switches the root file system from a
+temporary RAM location to the actual root file system location.
+
+- It then creates the  initial process, .fixedblue[systemd], in the system,
+and then starts servers such as web servers, ssh servers, print services, and so on.
+
+- Eventually, it displays a login prompt.
 ---
 name: references
 ### References
@@ -1084,7 +1942,7 @@ Wiley Global Education, 2018.
 
 1. The GNU Operating System. https://www.gnu.org/
 
----
+
     </textarea>
      <script src="js/remark.js" type="text/javascript">
      </script>

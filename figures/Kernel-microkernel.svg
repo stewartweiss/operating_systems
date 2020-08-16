@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="400" height="300" id="svg2" sodipodi:version="0.32" inkscape:version="0.46" version="1.0" sodipodi:docname="Kernel-microkernel.svg" sodipodi:docbase="/Users/MG55/Desktop" inkscape:output_extension="org.inkscape.output.svg.inkscape" sodipodi:modified="true">
+  <defs id="defs4">
+    <linearGradient id="linearGradient3839">
+      <stop style="stop-color:#ffdfdf;stop-opacity:1;" offset="0" id="stop3841"/>
+      <stop style="stop-color:#ffffff;stop-opacity:1;" offset="1" id="stop3843"/>
+    </linearGradient>
+    <linearGradient id="linearGradient3823">
+      <stop style="stop-color:#cdf7ff;stop-opacity:1;" offset="0" id="stop3825"/>
+      <stop style="stop-color:#00d4fb;stop-opacity:1;" offset="1" id="stop3827"/>
+    </linearGradient>
+    <inkscape:perspective sodipodi:type="inkscape:persp3d" inkscape:vp_x="0 : 150 : 1" inkscape:vp_y="0 : 1000 : 0" inkscape:vp_z="400 : 150 : 1" inkscape:persp3d-origin="200 : 100 : 1" id="perspective3312"/>
+    <linearGradient inkscape:collect="always" xlink:href="#linearGradient3823" id="linearGradient3829" x1="199.39047" y1="118.61907" x2="199.39047" y2="19.1588" gradientUnits="userSpaceOnUse"/>
+    <linearGradient inkscape:collect="always" xlink:href="#linearGradient3839" id="linearGradient3845" x1="95" y1="280.83932" x2="95" y2="179.16068" gradientUnits="userSpaceOnUse"/>
+    <linearGradient inkscape:collect="always" xlink:href="#linearGradient3839" id="linearGradient3853" x1="305" y1="280.83932" x2="305" y2="179.16068" gradientUnits="userSpaceOnUse"/>
+  </defs>
+  <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="0.88957197" inkscape:cx="152.04033" inkscape:cy="51.235695" inkscape:document-units="px" inkscape:current-layer="layer1" width="400px" height="300px" inkscape:window-width="1056" inkscape:window-height="744" inkscape:window-x="221" inkscape:window-y="208" showgrid="false"/>
+  <metadata id="metadata7">
+    <rdf:RDF>
+      <cc:Work rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g inkscape:label="Livello 1" inkscape:groupmode="layer" id="layer1">
+    <rect style="fill:url(#linearGradient3829);fill-rule:evenodd;stroke:#000000;stroke-width:1.67866457000000000px;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1;fill-opacity:1;font-size:16" id="rect2160" width="360" height="100" x="20" y="20" rx="18.397089" ry="15.317178"/>
+    <rect style="fill:url(#linearGradient3853);fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.67866457000000000px;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1" id="rect3133" width="150" height="100" x="230" y="180" rx="18.397089" ry="15.317178"/>
+    <text xml:space="preserve" style="font-size:36px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Helvetica" x="147.85449" y="82.673828" id="text4104"><tspan sodipodi:role="line" id="tspan4106" x="147.85449" y="82.673828" style="font-size:36px">Kernel</tspan></text>
+    <text xml:space="preserve" style="font-size:32px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Helvetica" x="241.76563" y="239.55399" id="text4108"><tspan sodipodi:role="line" id="tspan4110" x="241.76563" y="239.55399" style="font-size:32px">Software</tspan></text>
+    <rect style="fill:url(#linearGradient3845);fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.67866457000000000px;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1" id="rect2165" width="150" height="100" x="20" y="180" rx="18.397089" ry="15.317178"/>
+    <path style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M 45,121 L 45,170 L 35,170 L 65,190 L 95,170 L 85,170 L 85,121" id="path4114"/>
+    <path style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M 105,179 L 105,130 L 95,130 L 125,110 L 155,130 L 145,130 L 145,179" id="path5087"/>
+    <text xml:space="preserve" style="font-size:16px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Helvetica" x="39.710938" y="237.87552" id="text2167"><tspan sodipodi:role="line" id="tspan2169" x="39.710938" y="237.87552" style="font-size:32px">Servers</tspan></text>
+    <path style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M 160,230 L 180,250 L 180,240 L 220,240 L 220,250 L 240,230 L 220,210 L 220,220 L 180,220 L 180,210 L 160,230 z " id="path2171" sodipodi:nodetypes="cccc"/>
+    <path style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:3, 1;stroke-dashoffset:0;stroke-opacity:1" d="M 200,210 L 200,130" id="path2173"/>
+    <path style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M 200,220 L 204.5,200 L 195.5,200 L 200,220 z " id="path3148"/>
+    <path style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M 200,120 L 204.5,140 L 195.5,140 L 200,120 z " id="path4123"/>
+    <text xml:space="preserve" style="font-size:16px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Helvetica" x="210" y="165" id="text5094" sodipodi:linespacing="125%"><tspan sodipodi:role="line" id="tspan5096" x="210" y="165" style="font-size:32px;-inkscape-font-specification:Verdana;font-family:Verdana;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;text-anchor:start;text-align:start;writing-mode:lr;line-height:125%">IPC</tspan></text>
+  </g>
+</svg>

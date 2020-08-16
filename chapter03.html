@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>Processes</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="css/slides.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+    <textarea id="source">
+
+class: center, middle, title-slide
+
+
+
+## CSCI 340 Operating Systems
+
+<br>
+
+## Chapter 3: Processes
+
+.author[
+Stewart Weiss<br>
+]
+
+.license[
+Copyright 2020 Stewart Weiss. Unless noted otherwise all content is released under a
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
+Background image: roof of the EPIC Museum, Dublin, by Stewart Weiss.
+]
+
+
+---
+name: cc-notice
+template: default
+layout: true
+
+.bottom-left[&#169; Stewart Weiss. CC-BY-SA.]
+
+---
+name: tinted-slide
+template: cc-notice
+layout: true
+class: tinted
+
+---
+name:toc
+### Table of Contents
+[About This Chapter](#summary)<br>
+[Chapter Objectives](#objectives)<br>
+[Background](#process-background)<br>
+[The Process Abstraction](#process-abstraction)<br>
+[Processes, Concretely](#process-concretely)<br>
+[From File to Process](#process-creation)<br>
+[Mapping the File to Memory](#elf-to-mem)<br>
+[Process Context](#process-context)<br>
+[The Process Control Block](#pcb)<br>
+[The Contents of a PCB](#pcb-contents)<br>
+[The Linux .fixed[task_struct]](#pcb-linux)<br>
+[Process Scheduling](#scheduling)<br>
+[Types of Process Scheduling](#scheduling-2)<br>
+[Medium-Term Scheduling](#medium-term-scheduler)<br>
+[The Swapper](#medium-term-scheduler-2)<br>
+[The Short-Term, or CPU, Scheduler](#process-scheduler-1)<br>
+[Queuing of Processes](#process-queues)<br>
+[Context Switch](#context-switch)<br>
+[Process Creation Terminology](#process-creation-1)<br>
+[Viewing the Process Tree](#process-tree)<br>
+[Process Creation](#process-creation-2)<br>
+---
+### Table of Contents
+
+[The Magic of .fixedblue[fork()]](#fork)<br>
+[The .fixedblue[fork] System Call](#fork-2)<br>
+[A .fixedblue[fork()] Example](#fork-demo)<br>
+[Overhead of .fixedblue[fork()]](#fork-overhead)<br>
+[The UNIX .fixedblue[execve] System Call](#exec-calls)<br>
+[Process Termination](#process-termination)<br>
+[The .fixedblue[wait()] System Call](#wait-call)<br>
+[Process Termination Issues](#process-termination-2)<br>
+[How a Shell Works](#shell-example)<br>
+[Concurrency](#concurrency)<br>
+[Cooperating Processes](#cooperating-procs)<br>
+[References](#references)<br>
+<!--TOC_END-->
+
+
+---
+name: summary
+### About This Chapter
+
+In Chapter 1, one of the first statements made about operating systems was
+that,
+
+> "_the operating system alone must enable and control the execution of
+> all other software on the computer._"
+
+--
+
+It was also pointed out that among the most common and important
+services provided by operating systems are
+
+* _loading and executing programs, providing synchronization, and
+inter-process communication._
+
+--
+
+Central to these ideas is the concept of a running program, otherwise known
+as a .bluebold[process].
+.redbold[The most fundamental part of the study of operating systems is the study of processes].
+Studying processes is the purpose of this chapter, which covers the following topics:
+
+- Process concept and representation
+- Process scheduling
+- Operations on processes
+- Inter-process communication (IPC)
+- IPC in shared-memory computer systems
+- IPC in message-passing computer systems
+- Examples of specific IPC systems
+
+---
+name: objectives
+### Chapter Objectives
+
+
+You should be able to
+
+- identify the individual components of a process and explain how they are
+represented in an operating system.
+
+- describe the disk representation of a process and the typical memory image of a
+process.
+
+- explain the various ways in which processes are scheduled in an operating system.
+
+- describe how processes are created and terminated in an operating system,
+including all parts of the system call API related to process creation and
+termination.
+
+- identify and describe various methods of inter-process communication.
+
+- contrast inter-process communication using shared memory and message passing.
+
+- explain simple shared memory IPC programs and message-passing programs.
+
+
+
+---
+name: process-concept
+layout: false
+class: center, middle, inverse
+## The Process Concept
+We explore the process as an abstraction and as a concrete entity in a
+computer system.
+
+---
+template: tinted-slide
+layout: true
+
+---
+name: process-background
+### Background
+
+For simplicity, assume a computer has a single CPU.
+
+This computer can do many things ".greenbold[at the same time]." It can be running many user programs,
+printing, reading from a disk, and writing to a network connection, all simultaneously.
+
+--
+
+But there is just a single CPU, which can only execute one program at any instant of
+time. The illusion of several things happening at once occurs because the
+.redbold[CPU is switched between tasks so frequently that it seems as if they all happen at once].
+The switching is "under human radar", so to speak.
+
+--
+
+Operating system designers invented the concept of a process so that they could
+reason about this activity and understand how to control it and ensure that
+everything was running correctly.
+
+--
+
+In this so-called .bluebold[process model], everything running in the computer is part of
+a distinct sequential process. We are about to make this precise.
+
+---
+name: process-abstraction
+### The Process Abstraction
+
+Simply put, .redbold[a process is a program in execution.]
+
+This is true whether it is a user program or a system program.
+
+--
+
+A process is the .greenbold[unit of execution] managed by the kernel.super[1].
+
+--
+
+This means that the kernel manages individual processes, not parts of processes,
+performing all tasks on them such as running them, giving them resources they need,
+deciding when they should be terminated, and so on.
+
+
+.footnote[
+1. In a batch system, the unit of execution is called a .bluebold[job].
+]
+
+---
+name: process-concretely
+### Processes, Concretely
+
+
+Processes exist as concrete things - they use memory and other resources.
+The first question is, .redbold[what things that make up a process use memory?]
+
+--
+
+- the program code, also called the .bluebold[text segment]
+
+--
+
+- the  .bluebold[stack contents]: function parameters, return addresses, and local variables
+
+--
+
+- the .bluebold[data segment], which contains global variables and constants
+
+--
+
+- the .bluebold[heap], which contains the memory dynamically allocated at run-time
+by this process
+
+--
+
+- other resources such as structures representing open files and devices, command-line arguments,
+environment values, and much more.
+
+--
+
+The memory associated with a process is called its .bluebold[memory image].
+---
+name: mem-image
+template: tinted-slide
+layout: true
+### The Memory Image
+
+A simplified diagram of a process's  memory image, based on ELF, is shown here.
+
+.left-column-larger[
+{{content}}
+]
+.right-column-smaller[
+<img src="figures/memlayout_simple.png" width=110% alt="memory layout">
+]
+---
+name: memory-image-1
+template: mem-image
+
+
+- The text segment is at the bottom of the address space.
+
+- There are two data segments: initialized data, such as global
+constants, and uninitialized data, such as uninitialized global variables, called the <span class=fixedblue>bss</span>.
+
+- Command line arguments and environment strings are in the highest part
+of user addressable memory; the stack begins directly below them,
+growing downward, towards the <span class=fixedblue>bss</span>.
+
+- The heap is the free space below the stack and above the <span class=fixedblue>bss</span>. This is where
+dynamically-allocated variables are stored.
+
+
+---
+name: memory-image-1
+template: mem-image
+
+<span class=redbold>Exercise</span>:
+Indicate where each variable in the program below is located in the memory image.
+```C
+#include <stdio.h>
+
+int numargs;
+const int MAX = 10;
+
+int main( int argc, char* argv[], char** envp)
+{
+    int * stuff;
+    int i;
+
+    numargs = argc;
+    stuff = (int *) malloc(sizeof(int)*MAX);
+    for ( i = 0; i < MAX; i++ )
+         stuff[i] = i*i;
+
+    return numargs;
+}
+```
+<!-- -->
+---
+template: tinted-slide
+layout: true
+---
+name: process-creation
+### From File to Process
+
+.redbold[An executable program residing on a disk is not a process]; when it is run,
+a process is created to run it. It is like the DNA for a process - it contains
+some of the information needed to create a process, which is like a living thing.
+
+- A single program can be run multiple times by the same or different users.
+Each run is a different process.  A good example is .fixedblue[bash] in Linux. On a busy computer,
+dozens of users might be running .fixedblue[bash] simultaneously. Each user's run of it
+is a unique process.
+
+- Try this out: login to a multi-user system running Linux.super[1], and type
+```bash
+ps -ef | grep bash
+```
+You will see how many processes are running .fixedblue[bash].
+
+.footnote[
+1 On the Hunter system, remotely login to  .fixedblue[eniac] using .fixedblue[ssh] to try this.
+]
+
+--
+
+How is the information to create a process stored in an executable file?
+
+--
+
+- The format of the executable program file depends on the operating system
+(see [Chapter 2, Portability](chapter02.html#portability));
+in POSIX systems such as Linux, it is .greenbold[ELF].
+
+
+---
+name: elf-to-mem
+### Mapping the File to Memory
+
+The executable file on disk is used by the kernel to create a process.
+It is not loaded into memory in a single continuous piece; it contains
+tables that allow the kernel to assemble various sections into a memory image.
+
+.left-column-small[
+The kernel also allocates more memory directly above the user addressable part,
+for the kernel's use.
+
+This includes a kernel stack, and other data structures that the kernel uses
+to manage the process.
+]
+
+.right-column-large[
+<img src="figures/memlayout.png" width=70% alt="memory layout">
+]
+
+---
+name: process-context
+### Process Context
+
+The memory image of a process is not by itself a complete characterization of
+the process.
+
+The .bluebold[process context] is the set of all information required to
+completely represent a process.  It contains much more than the memory image.
+
+--
+
+- For one, a process has CPU resources
+such as the current .bluebold[processor state], which includes the .greenbold[program counter],
+registers, including the stack pointer, and so on.
+
+--
+
+- It also has an .bluebold[execution state]. During its lifetime, the execution state of a process changes  as
+various events and actions take place. At any instant of time, the process can be in
+exactly one of several possible different states of execution:
+
+--
+
+ - .redbold[new]: It is newly created but not completely loaded into memory and ready to run.
+
+ - .redbold[ready]: It is ready to run. It just needs to be given the CPU to run.
+
+ - .redbold[running]: It has acquired the CPU and is running.
+
+ - .redbold[waiting]: It has made a request for service and is waiting for some
+    event to occur and is therefore not able to use the processor.
+
+ - .redbold[terminated]: It has finished execution.
+
+--
+
+.redbold[What actions and events cause it to change from one state to another?]
+
+
+---
+name: state-transitions
+template: tinted-slide
+layout: true
+### Process State Transitions
+
+---
+name: transitions-all
+template: state-transitions
+
+.center[
+<img src="figures/state-transitions.png" width=80% alt="process state transitions">
+]
+
+The complete set of transitions (ignoring .greenbold[process suspension]) is
+depicted in the above .bluebold[state transition diagram]. The arrows from one
+state to another are labeled by the events or actions that cause the process
+to transition from the source state to the target state.
+
+The next few slides explain these transitions.
+
+
+---
+name: transition-1
+template: state-transitions
+
+.center[
+<img src="figures/state-transitions-new.png" width=80% alt="process state transitions">
+]
+
+A process starts out in the .redbold[new] state.
+
+
+---
+name: transition-2
+template: state-transitions
+
+.center[
+<img src="figures/state-transitions-admit.png" width=80% alt="process state transitions">
+]
+When it is loaded into memory, or .bluebold[admitted] into the system, it enters
+the .redbold[ready] state.
+
+---
+name: transition-3
+template: state-transitions
+
+.center[
+<img src="figures/state-transitions-dispatch.png" width=80% alt="process state transitions">
+]
+
+When it is scheduled to run, or
+.bluebold[dispatched], it transitions to the .redbold[running] state.
+
+---
+name: transition-4
+template: state-transitions
+
+.center[
+<img src="figures/state-transitions-io-wait.png" width=80% alt="process state transitions">
+]
+
+When it makes a request to the kernel that cannot be satisfied immediately, such as
+for I/O, it is  removed from the processor and
+transitions to the .redbold[waiting] state.
+
+---
+name: transition-5
+template: state-transitions
+
+.center[
+<img src="figures/state-transitions-io-complete.png" width=80% alt="process state transitions">
+]
+
+When the event for which it is waiting completes, it is no longer
+in the waiting state and transitions back to the  .redbold[ready] state.
+
+---
+name: transition-6
+template: state-transitions
+
+.center[
+<img src="figures/state-transitions-dispatch.png" width=80% alt="process state transitions">
+]
+
+It will then be scheduled to run again, i.e., it is
+.bluebold[dispatched], and transitions again to the .redbold[running] state.
+
+---
+name: transition-7
+template: state-transitions
+
+.center[
+<img src="figures/state-transitions-preempt.png" width=80% alt="process state transitions">
+]
+
+Sometimes a process might be removed from the processor, usually because
+an interrupt from a timer or some other event takes place and the kernel must
+handle that event. In this case we say it is
+.bluebold[preempted], and transitions back to the .redbold[ready] state.
+
+---
+name: transition-8
+template: state-transitions
+
+.center[
+<img src="figures/state-transitions-dispatch.png" width=80% alt="process state transitions">
+]
+
+Eventually it will then be scheduled to run again, i.e., it is
+.bluebold[dispatched], and transitions again to the .redbold[running] state.
+
+---
+name: transition-9
+template: state-transitions
+
+.center[
+<img src="figures/state-transitions-exit.png" width=80% alt="process state transitions">
+]
+
+This time it finishes execution and
+.bluebold[exits], transitioning  to the .redbold[terminated] state.
+
+---
+template: tinted-slide
+layout: true
+
+---
+name: pcb
+### The Process Control Block
+
+The preceding discussion about the states of a process shows that processes
+can be running and then not running and then running again.
+
+--
+
+This implies that when the kernel needs to remove a process from a processor,
+.redbold[it has to be able to restore the process in the exact state it was in when it was removed.]
+
+--
+
+This implies in turn that the kernel needs a .greenbold[data structure] into which it can save
+the context of a running process and from which it can restore that context when
+the process runs again.
+
+--
+
+This data structure must contain enough information about a process so that
+the kernel can thoroughly manage the process.
+This includes things such as how much CPU time it has used so far, or how often
+it needed I/O. It uses this type of information to make various decisions about
+scheduling the process and allocating resources to it.
+
+--
+
+This data structure is usually called a .bluebold[Process Control Block], or .bluebold[PCB]
+for short. The kernel maintains a PCB for every process that has been created and not yet
+destroyed.
+
+--
+
+.redbold[To manage every process, the kernel needs a unique way to identify each of them.]
+Most operating systems associate a unique positive integer to each process, which is
+called its .bluebold[process id]. This process id is an important piece of data.
+
+
+---
+name: pcb-contents
+### The Contents of a PCB
+
+The information contained in a process control block includes (but is not limited to)
+the following:
+
+
+- .redbold[process execution state]: running, ready, waiting, and so on.
+
+- .redbold[process identifiers]: process id and "related process identifiers"
+
+- .redbold[program counter]: location of next instruction to execute
+
+- .redbold[CPU registers]: contents of all registers used by the process
+
+- .redbold[CPU scheduling information]: execution priorities, scheduling queue pointers
+
+- .redbold[memory management information]: maps  of all memory allocated to the process
+
+- .redbold[accounting information]: CPU usage, clock time elapsed since start, time  limits
+
+- .redbold[I/O status information]: resources and I/O devices held by process,
+list of open files
+
+- .redbold[related process lists]: pointers to list of children, siblings, parent
+
+--
+
+The contents depend on the operating system, but in all cases, there is usually
+much more than this in an actual implementation.
+
+---
+name: pcb-linux
+### The Linux .fixed[task_struct]
+
+In Linux, processes are called .bluebold[tasks] and the PCB is
+represented by a .fixedblue[C] struct called the .fixedblue[task_struct].
+
+The .fixedblue[task_struct] is a very large structure, with over one hundred
+members. Linux maintains a linked list of them.
+
+To give you an idea of how the various items of information are represented, below
+is a tiny out-of-order slice of the Linux .fixedblue[task_struct].
+```C
+struct task_struct {
+...
+    volatile long       state;    /* process state */
+    pid_t               pid;      /* process id */
+    pid_t               `tgid`;     /* `thread group id` */
+    struct list_head    children; /* list of children */
+    struct list_head    sibling;  /* next sibling pointer */
+    struct mm_struct    *mm;      /* memory management info */
+    struct fs_struct    *fs;      /* filesystem information: */
+    struct files_struct *files;   /* open file information: */
+...
+};
+
+```
+--
+
+You may wonder what a .redbold[thread group id] is. In the next chapter, you will learn
+about  .greenbold[threads].
+They play an important role in modern programming and in operating systems.
+
+---
+name: scheduling
+### Process Scheduling
+
+Recall from [Chapter 1](chapter01.html#multiprogramming-1) that the
+purpose of multiprogramming is to ensure that at all times, a process
+is running on every CPU,  in order to maximize CPU utilization.
+
+Recall too that the objective of time-sharing systems
+is to allow users to interact with their programs as if they were the only program running.
+
+Achieving both simultaneously is tricky business:
+
+- The mix of processes that use the CPU must be carefully controlled. There needs to be a mix of the right
+processes in memory, not too many, not too few, and the order in which they use the
+CPU should be just right as well.
+
+- All of these decisions affect the above objectives.
+
+--
+
+.bluebold[Process scheduling] in general refers to various decisions
+about the disposition of processes in the computer system.
+
+
+---
+name: scheduling-2
+### Types of Process Scheduling
+
+There are three levels of process scheduling:
+
+- .redbold[long-term scheduling]: the decision about which processes are admitted
+into system (usually just in batch systems).
+
+- .redbold[medium-term scheduling]: the decision about which processes are memory-resident.
+
+- .redbold[short-term scheduling]: also called .redbold[CPU scheduling],
+the decision about which memory resident process gets the CPU next.
+
+Long-term scheduling is used in batch systems to decide the order in which various
+jobs should be  executed. We will not discuss it here.
+
+Medium-term and short-term scheduling are relevant to interactive computer systems
+and we focus our attention on these.
+
+
+---
+name: medium-term-scheduler
+### Medium-Term Scheduling
+
+Medium-term scheduling refers to the decision about .redbold[how many] and .redbold[which]
+processes should be in memory. These are important decisions:
+
+- if too few processes are in memory, the CPU might be idle, and
+- if too many, then processes might not have enough memory to perform well.
+
+The number of processes currently in memory is called the .bluebold[degree of multiprogramming].
+
+- One purpose of medium-term scheduling is to control the degree of multiprogramming.
+
+- Another purpose is to ensure a .redbold[good mix of processes].
+
+--
+
+Some processes are .redbold[highly interactive] - they run briefly and immediately issue I/O requests.
+They are called .bluebold[I/O-bound] processes.
+
+Others are very .redbold[compute-intensive] - they spend  little time making I/O requests,
+spending most of their time doing a lot of computing. They are called .bluebold[compute-bound]
+processes.
+
+Ensuring a good mix of processes means having a mix of I/O-bound and compute-bound
+processes that will keep the CPU bzusy while keeping .greenbold[response times] low.
+.bluebold[Response time] is the time between when a request is made to a process
+and that process responds to that request.
+
+
+---
+name: medium-term-scheduler-2
+### The Swapper
+
+In interactive computer systems, where users use shells to issue
+commands and run applications and other programs, processes are automatically loaded
+into memory, so there is no explicit scheduler that .redbold[puts] processes
+into memory.
+
+--
+
+On the other hand, processes are removed from memory for various reasons, such
+as because there are too many processes in memory and none of them have enough
+memory for their needs.
+
+In this case, decisions must be made as to which processes to remove and when to
+return them to memory. The .bluebold[swapper] is a kernel process that does this.
+
+Because this is really an issue regarding memory management, further explanation
+and discussion is delayed until Chapter 9.
+
+---
+name: process-scheduler-1
+### The Short-Term, or CPU, Scheduler
+
+The objective of the CPU scheduler is to .redbold[maximize CPU utilization] while
+keeping the process .redbold[response times as short as possible].
+
+--
+
+To achieve this, the kernel maintains several process queues:
+
+- The .redbold[ready queue] contains the set of  all memory-resident processes.super[1]
+that are ready to execute but not running.
+
+- For each device, a .redbold[wait queue], which contains the  processes.super[1] waiting
+for an event related to that device. For example, the wait queue for a disk drive
+contains the processes waiting for data from that disk.
+
+.footnote[
+1 When we say a queue contains processes, we mean it contains pointers to their process
+control blocks.
+]
+
+--
+
+.redbold[The CPU scheduler selects processes from the ready queue to run on an available CPU.]
+
+In an interactive system, the CPU scheduler runs very frequently, because it cannot
+let any process run for too long, otherwise the response times for the remaining  processes
+would be unacceptably long.
+
+Because it runs so frequently, it must be extremely fast, otherwise the overhead of
+scheduling decreases CPU utilization, decreases throughput, and increases response times.
+
+--
+
+Process scheduling is explored in detail in Chapter 5.
+
+---
+name: process-queues
+### Queuing of Processes
+
+A process in the ready queue eventually is scheduled to run on a CPU. When it runs, suppose it
+initiates an I/O request. The kernel moves it to a wait queue for the device.
+
+--
+
+Eventually, it gets serviced and it moves to the rear of the ready queue.
+
+--
+
+In general, processes run, make requests for service, wait, run again, and so on, until eventually they
+terminate. This means that they move from one queue to another over their lifetimes.
+
+--
+
+A .bluebold[queuing diagram] is a directed graph with two types of nodes: queue-nodes and
+resource-nodes. Some edges are labeled by the actions that cause the transitions.
+A queuing diagram for our simple system is below.
+
+.center[
+<img src="figures/queuing-diagram.png" width=75% alt="queuing diagram">
+]
+
+---
+name: context-switch
+### Context Switch
+
+When an interrupt occurs, the currently running process must be removed from the CPU
+and a kernel routine run. .redbold[How does this happen?]
+
+--
+
+The system (part hardware and part software) needs to save the current .greenbold[context]
+of the process before it removes it, so that when it runs again, it can restore the process to the
+exact state that it was in when it was interrupted.
+
+Recall from the [Process Context slide](#process-context) that the context includes the
+values of all registers, the process state, and memory-management information.
+
+--
+
+Changing the state of the CPU from one context to another is called a .bluebold[context switch].
+It consists of two steps: .bluebold[save the old context] and .bluebold[load the new context].
+
+- In general, the context of an interrupted process is stored in its PCB. When it runs
+again, it is used to restore the process to its previous state.
+
+- Context switching time varies from machine to machine. It depends on memory speed,
+size of register set, and whether the architecture has special hardware instructions to copy register sets.
+In general it is costly.
+
+- To reduce the overhead of it, some systems keep multiple sets of registers for each CPU
+so that the old process context does not need to be saved.
+
+---
+name: process-operations
+layout: false
+class: center, middle, inverse
+## Process Operations
+
+Processes can create new
+processes dynamically and can terminate themselves.
+We explore how operating systems support
+dynamic process creation and termination.
+
+
+---
+template: tinted-slide
+layout: true
+
+---
+name: process-creation-1
+### Process Creation Terminology
+
+When a process .fixedblue[P] creates a new process .fixedblue[Q],
+we say that .fixedblue[P] is the .bluebold[parent] of .fixedblue[Q] and
+.fixedblue[Q] is the .bluebold[child] of .fixedblue[P].
+
+This .greenbold[anthropomorphic use] of the terms parents and children
+extends in a natural to the terms .bluebold[sibling], .bluebold[grandparent],
+.bluebold[grandchild], and so forth.
+
+In general, processes form a tree in which
+- nodes are processes
+- the root node is the very first process, and
+- the children of any node are that process's children.
+
+---
+name: process-tree
+### Viewing the Process Tree
+
+In Linux, you can see the tree structure of all existing processes with the
+.fixedblue[ps ]command.super[1], using the options .fixedblue[-efwjH]
+```bash
+ps -efwjH
+```
+
+.footnote[
+1 You can use the .fixedblue[pstree] command to see the tree more visually evident.
+]
+
+If I want to see just those processes run by me, directly or indirectly, I would type
+```bash
+ps -efwjH | grep '^stewart'
+```
+
+Some partial output is:
+```bash
+stewart   2100  1990  2100  2100  0 12:35 ?        00:00:00       mate-session
+stewart   9954  2290  2100  2100  0 15:10 ?        00:00:02           mate-terminal
+stewart   9965  9954  9965  9965  0 15:10 pts/1    00:00:00             bash
+stewart  10198  9965 10198  9965  0 15:19 pts/1    00:00:00               ps -efwjH
+stewart  10199  9965 10198  9965  0 15:19 pts/1    00:00:00               grep ^stewart
+```
+
+It will format the lines so that child processes are indented with respect to their parents.
+
+Notice that .fixedblue[mate-session] is the root here, and .fixedblue[mate-terminal] (a terminal window application),
+its child, and .fixedblue[bash], its child, and that the two commands,
+.fixedblue[ps] and .fixedblue[grep], are children of .fixedblue[bash] and hence siblings.
+
+???
+exercise - have them try to create the deepest tree that they can and display it with this command.
+
+---
+name: process-creation-2
+### Process Creation
+
+When one process creates another, there are several questions that arise.
+
+
+- What program will the new process execute?
+- Will the new process share any of the resources of its parent?
+- Will the new process get a copy of the parent's resources?
+- Will the parent and the child run simultaneously?
+
+--
+
+Different operating systems answer these questions in different ways.
+
+For example, in UNIX, the .fixedblue[fork()] system call creates a new process
+and gives it a copy of the parent's  address space and resources, including
+the program it executes,
+so .redbold[the new process executes its own copy of the same program as its parent].
+This involves significant overhead, which we will discuss soon.
+
+--
+
+In Windows, the .fixedblue[CreateProcess()] function
+expects the name of a program that the child will execute, as well as many other
+parameters. Therefore the child process can  start running with a different program.
+
+--
+
+We use the UNIX .fixedblue[fork()] call to explain and illustrate process creation.
+---
+name: fork
+### The Magic of .fixedblue[fork()]
+
+The .fixedblue[fork()] system call creates a new process that is a duplicate
+of the calling process. The new process executes the same program as its parent, starting
+at the address immediately after the return from the call.super[1].
+
+The call
+```C
+pid_t process_id = fork();
+```
+causes the kernel to create a new process that is almost an exact copy of the
+calling process,
+so that after the call, there are two processes, each continuing its
+execution at the point immediately after the call in the executing program!
+
+--
+
+To repeat:
+before .fixedblue[fork()] is called, there is a single process about to
+execute the call; after it has returned, there are two.
+
+--
+
+.redbold[Note]: The system call .fixedblue[getpid()] returns the process id of the calling
+process. This is useful in programs that use .fixedblue[fork()], as we show
+shortly.
+
+.footnote[
+1 In other words, even the value of the program counter is exactly the same in the
+child and parent.
+]
+
+---
+name: fork-2
+### The .fixedblue[fork] System Call
+
+The new process is not identical to its parent. One important difference is
+that the return value of .fixedblue[fork()] is different in the parent and child.
+.left-column[
+- When the parent returns from the call
+  ```C
+  pid_t process_id = fork();
+  ```
+ it gets a return value equal to the .redbold[process id of the newly created process],
+i.e., its child.
+
+- When the child returns from the call, it gets a return value of .redbold[zero].
+
+- This way the same program can be used by parent and child to do different
+things. The program to the right shows how the program would be structured.
+]
+
+.right-column[
+```C
+#include <unistd.h>
+#include <stdio.h>
+
+int main(int argc, char* argv[])
+{
+    pid_t  pid;
+    /* parent code  */
+    /* before fork  */
+
+    if ( ( pid = fork() ) == -1 )
+        /* fork failed */
+    else
+        if ( 0 == pid ) {
+            /* child code */
+        }
+        else {
+            /* parent code */
+        }
+    return 0;
+}
+```
+]
+
+---
+name: fork-demo
+###  A .fixedblue[fork()] Example
+
+```C
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int global = 10;
+
+int main(int argc, char* argv[])
+{
+    int    local = 0;
+    pid_t  returnval;
+
+    printf("Parent (pid == %d): local = %d, global = %d \n", `getpid()`, local, global);
+    if ( ( returnval = fork() ) == -1 )
+        exit(1); /* fork failed */
+
+    else if ( 0 == returnval ) {
+        printf("Child: local = %d, global = %d\n", ++local, ++global);
+    }
+    else {
+        sleep(2);  /* parent sleeps long enough for child's output to appear */
+    }
+    /* both processes execute this print statement */
+    printf("pid = %d, local = %d, global = %d \n", `getpid()`, local, global);
+    return 0;
+}
+```
+.footnote[
+The calls to .fixedblue[getpid()] are highlighted to emphasize how this
+system call is used.
+]
+
+---
+name: fork-overhead
+### Overhead of .fixedblue[fork()]
+
+The .bluebold[overhead] associated with some task, such as a system call,
+is the time spent by the operating system doing work
+that is not directly productive but is necessary to perform that task.
+
+When a user process forks, the "productive part" is that a new process is
+running.How much extra time does it take for that to happen? What is the
+delay caused by the operating system's having to do various things? This is
+its overhead.
+
+--
+
+The .fixedblue[fork()]  call has a large amount of overhead:
+
+- The kernel must .redbold[make a copy of the address space] of the calling process;
+
+- it must .redbold[allocate new memory] for the new process and copy the address space of
+the caller into the newly allocated memory;
+
+- it must redbold[copy other resources as well], that are not in that address space, such
+as various kernel resources required by the first process (queues, signal information,
+etc.)
+
+--
+
+There are alternative methods of creating a process that have less overhead:
+.fixedblue[vfork()] does not involve copying the address space - it is like the
+Windows mechanism - it expects a program argument so that it can immediately
+create an address space with that program.
+
+
+---
+name: exec-calls
+### The UNIX .fixedblue[execve] System Call
+
+The .fixedblue[fork()] call would not be very useful unless there was also a
+way for a process to change the program it is executing.
+The .fixedblue[execve()] system call does this.
+Its prototype is
+```C
+int execve(const char *filename, char *const argv[], char *const envp[]);
+
+```
+When it is called by a process, the address space of the process is changed and
+the process executes the program specified by its first argument.
+
+To illustrate, the following program executes the program passed to it as the
+first command line argument, with remaining arguments given to that program.
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main (int argc, char * argv[], char * envp[])
+{
+    if (argc < 2) {
+        exit (1); /* incorrect usage - should print usage error */
+    }
+    execve(argv[1], argv+1, envp);
+    exit(1); /* if this line is executed, execve() failed */
+}
+```
+<!--  -->
+
+---
+name: process-termination
+### Process Termination
+
+A process can terminate normally in one of a few ways:
+- It can execute its last instruction.
+- It can execute a .fixedblue[return] instruction.
+- It can make an explicit request to the operating system to terminate itself.
+  - In UNIX, a process can either call the .fixedblue[exit()] library function
+or  the .fixedblue[_exit()] system call directly.super[1].
+
+.footnote[
+1 In either case, the kernel function `do_exit()` eventually runs,
+which does some clean up and calls various functions in the kernel whose
+names are of the form `exit_*()`, which clean up all data structures
+used by the kernel for this process.
+]
+
+--
+
+Processes also terminate abnormally, for many reasons, such as
+
+- error conditions such as unhandled exceptions
+- resource limits exceeded
+- I/O failures
+- various types of faults such as segmentation faults, divide-by-zero, etc.
+
+--
+
+When a process terminates, normally or abnormally,  the kernel must clean up
+by deallocating all memory and other resources used by that process,
+cleaning up incomplete I/O, closing open files, and doing other accounting
+tasks.
+
+---
+name: wait-call
+### The .fixedblue[wait()] System Call
+
+Some operating systems, such as UNIX, provide a means by
+which a parent can request that, when a child terminates, the parent can receive
+a short message associated with that termination, usually called
+the .bluebold[status] of the child.
+
+In UNIX, a parent has to wait for the child to terminate
+to get that status, using one of the .fixedblue[wait()]
+system calls. The .fixedblue[wait()] call provides the status and returns the process id
+of any child that terminates.  The parent code is of the form
+
+```C
+int status;
+pid_t pid = wait(&status);
+```
+In UNIX, a process can also wait for a specific child to terminate using the
+.fixedblue[waitpid()] system call.
+
+--
+
+In UNIX, waiting for a child is so important that when a child terminates and
+its parent is not waiting for it, the child does not get deleted completely,
+and is turned into a .bluebold[zombie] process.  Eventually such zombies are
+deleted by the kernel.
+
+If a child terminates after its parent terminates, it becomes an .bluebold[orphan]
+process, which is eventually adopted by a system process.
+
+
+---
+name: process-termination-2
+### Process Termination Issues
+
+Some operating systems do not allow a child to exist if its parent has terminated.
+If a process terminates, then all of its children must also be terminated.
+
+This causes .bluebold[cascading termination], because forced termination of a child
+causes its children to be terminated, and their children, and so on.
+
+It is a responsibility of the operating system to terminate each of these processes,
+adding overhead.
+
+
+
+Some operating systems allow a parent process to terminate a child
+indirectly.super[1]. Some reasons for this are that:
+- the child has exceeded its allocated resources,
+- the task assigned to the child does not need to be performed, and
+- the parent is exiting and the operating system does not allow  a child to
+execute unless its parent is still running.
+
+.footnote[
+1 UNIX provides a .greenbold[signal] mechansim to allow this.
+]
+
+---
+name: shell-example
+### How a Shell Works
+
+This is a gross simplification, but it illustrates how the four important
+process-related system calls, .fixedblue[fork()], .fixedblue[execve()],
+.fixedblue[exit()], and .fixedblue[wait()], are used to implement a simple
+shell.
+
+A shell program, such as .fixedblue[bash], basically stays in a loop in which
+it reads a command line, parses it and checks for errors, and if all is okay,
+forks a child process to execute the command with its arguments.
+
+If the command was not put in the background, .fixedblue[bash] waits for the
+child process to terminate and starts at the top of its loop.
+
+<img src="figures/shell-logic.png"  width=80% alt="shell logic">
+
+In this diagram, there is no explicit call to .fixedblue[exit()] because it takes
+place within the program whose name is passed to the shell, in this case
+named .fixedblue[arg].
+
+
+---
+name: ipc-intro
+layout: false
+class: center, middle, inverse
+## Interprocess Communication
+We look at the various ways in which processes can share data and communicate with each other.
+
+---
+template: tinted-slide
+layout: true
+
+---
+name: concurrency
+### Concurrency
+
+Two processes are .bluebold[concurrent] if their computations overlap in time.
+
+--
+
+A collection of processes is .bluebold[concurrent] if for any pair of processes in the
+collection, the processes in the pair overlap in time.
+
+--
+
+You may sometimes see references to .greenbold[concurrent programs] or .greenbold[concurrent systems].
+
+--
+
+A .bluebold[concurrent program] (.bluebold[concurrent system])
+is a program (system) that consists of more than one module or unit that can be executed
+concurrently.
+
+- Usually there is an assumption that the order in which the different units execute
+does not affect the outcome of the computation.
+
+--
+
+.redbold[Operating systems are concurrent systems]. They consist of many processes that can
+execute at the same time. This is why we study concurrent processes and how they
+can communicate with each other.
+
+---
+name: cooperating-procs
+### Cooperating Processes
+
+Processes executing concurrently in the operating system can be classified as
+either .greenbold[independent]  or .greenbold[cooperating] processes.
+
+- Two or more processes are .bluebold[independent] of each other if neither
+affects the computation of the other.
+
+- Two or more processes are .bluebold[cooperating] if
+each can affect or be affected by the computation of the other.
+
+Affecting a computation means changing the output or the outcome in some way.
+
+
+#### Reasons for Cooperating:
+
+- Data sharing:
+ Since several applications may be interested in the same piece of information
+
+
+- Computation speedup.
+If we want a particular task to run faster, we must break it into subtasks,
+each of which will be executing in parallel with the others. They will need to exchange
+data or synchronize. These topics are explored in Chapter 6.
+
+
+- Modularity.
+We may want to construct the system in a modular fashion,
+dividing the system functions into separate processes or threads.
+
+---
+name: references
+### References
+
+1. Daniel P. Bovet, Marco Cesati. _Understanding the Linux Kernel_, 3rd Edition. O'Reilly, 2006.
+
+1. Abraham Silberschatz, Greg Gagne, Peter B. Galvin. _Operating System Concepts_, 10th Edition.
+Wiley Global Education, 2018.
+
+1. The GNU Operating System. https://www.gnu.org/
+
+
+    </textarea>
+     <script src="js/remark.js" type="text/javascript">
+     </script>
+     <script src="js/remark_conf.js" type="text/javascript">
+     </script>
+
+  </body>
+</html>

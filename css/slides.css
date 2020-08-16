@@ -46,6 +46,12 @@ h4 {
     line-height: 1.0em;
 }
 
+.activity {
+    background: rgb(255, 204, 204);
+    color: #00008B;
+    padding-top: 1em
+}
+
 .remark-slide-content > h1:first-of-type {
     margin-top: 0.0ex;
     padding-top:0.0px;
@@ -325,6 +331,18 @@ padding: 0% 1% 1% 5%;
   clear: both;
 }
 
+/* Two-column layout */
+.left-column-larger {
+width: 54%;
+float: left;
+padding: 0% 5% 1% 1%;
+}
+
+.right-column-smaller {
+width: 34%;
+float: right;
+padding: 0% 1% 1% 5%;
+}
 
 
 
