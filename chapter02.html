@@ -107,6 +107,7 @@ name:toc
 [Monolithic Structure: UNIX](#monolithic-1)<br>
 [Monolithic Structure: Linux](#monolithic-2)<br>
 [Layered or Ring Structure](#layered)<br>
+[UNIX as a Ring Structure](#unix-rings)<br>
 [Microkernel Foundations](#microkernel-foundation)<br>
 [Benefits of Microkernels](#microkernel-advantages)<br>
 [The Early Microkernels](#microkernels)<br>
@@ -298,6 +299,18 @@ Examples of shells are
 .redbold[terminal that transmits data one character at a time, and can only display characters].
 
 ---
+name: cli-activity
+count: false
+class: breakout
+### Command-Line Interface Activity
+
+- What other shells are available in Linux systems? Make a list of them.
+
+- Of the shells that you found, which are .greenbold[free and open source] shells?
+
+- What is the name of the person who wrote the very first shell and when was it written?
+
+---
 name: terminals
 ### Command-Line Interpreters and Terminals
 
@@ -355,6 +368,7 @@ We can enter the .fixedblue[date] command by typing the word ".fixedblue[date]" 
 The current date and time appears.
 ]
 
+
 --
 
 .below-column[
@@ -363,13 +377,26 @@ has both the .greenbold[Powershell] and
 the old standby, .fixedblue[command.exe], in which you can run DOS commands.
 ]
 
-???
-have them login to eniac and then a cslab host using ssh.
-run a few simple commands:
-pwd, ls, ls -a,
+---
+name: terminal-activity
+count: false
+class: breakout
+### A Terminal Activity
 
-
-
+- Login to .fixedblue[eniac.cs.hunter.cuny.edu] and then login to
+any of the .fixedblue[cslab] hosts using .fixedblue[ssh]. For example:
+```bash
+ssh cslab12
+```
+- Try out these commands:
+```bash
+pwd
+who
+ls -a
+cd /data/biocs/b/student.accounts/cs340_sw/demos
+pushd ~
+popd
+```
 
 
 ---
@@ -397,10 +424,20 @@ In UNIX and UNIX-like systems,  a command can be implemented in one of two ways:
 There are a handful of commands that are implemented in both ways, such as
 the .fixedblue[echo] , .fixedblue[kill],  and .fixedblue[pwd] commands.
 
-???
-Stay logged in, use the type command to determine the types of various
-commands
-and use file to identify non-built-ins
+---
+name: command-typing-activity
+count: false
+class: breakout
+### Learning About Commands
+
+- Login to .fixedblue[eniac.cs.hunter.cuny.edu] and then login to any
+.fixedblue[cslab] host.
+
+- Use the .fixedblue[type] command to determine the types of various
+commands that you know.
+
+- Use the .fixedblue[file] command to find the types of the non-built-in commands
+that you discovered.
 
 ---
 name: gui
@@ -575,7 +612,7 @@ But it is true that almost every system call in Linux has a wrapper function in 
 --
 
 The three most common APIs are the
-- .bluebold[WinAPI] for Windows (.bluebold[Win64] for 64-bit Windows),
+- .bluebold[WinAPI] for Windows (.bluebold[Win64] for 64-bit __Windows__),
 -  .bluebold[POSIX API] for POSIX-based systems, which includes
 virtually all versions of UNIX, Linux, and macOS, and
 - .bluebold[Java API] for the Java virtual machine (JVM)
@@ -659,6 +696,7 @@ int main(int argc, char *argv[])
 ]
 ]
 
+
 ---
 name: read-syscall
 ### The .fixed[read] System Call in UNIX
@@ -691,11 +729,28 @@ The page shows that .fixedblue[read] has three parameters:
 ```
 ]
 
+
 It returns a  .fixedblue[ssize_t] result, which is the number of bytes actually read.
 
-???
-Have them copy the cp.c program into their home directories using the system
-cp command. Then use a simple editor to modify buffer size and try to recompile.
+---
+name: read-syscall-activity
+count: false
+class: breakout
+### A .fixedblue[read] System Call Activity
+
+- Login to .fixedblue[eniac.cs.hunter.cuny.edu] and navigate to the directory
+.fixedblue[/data/biocs/b/student.accounts/cs340_sw/demos]
+
+- There you will find the file .fixedblue[mycp.c], which is a full version of the
+program from the previous slide that copies one file to another.
+
+- Copy the .fixedblue[mycp.c] program into your home directory using the system
+.fixedblue[cp] command.
+
+- Using a simple editor, make the buffer size larger and smaller, recompiling
+each time and running on some large file. How does buffer size affect running time?
+
+
 
 
 ---
@@ -781,8 +836,8 @@ where the kernel expects them;
 if  the system call returns an error number when the
 kernel returns the CPU to user mode.
 
-Depending on the call, it might do more than this, such as preprocessing the arguments
-or postprocessing results.
+Depending on the call, it might do more than this, such as pre-processing the arguments
+or post-processing results.
 
 --
 
@@ -933,7 +988,7 @@ Some types of services  falling into this category are:
 
 - getting and setting system timers
 
-- getting and setting system data, such as host information, network inforrmation, etc.
+- getting and setting system data, such as host information, network information, etc.
 
 - getting accounting and performance information, such as CPU usage, memory usage
 
@@ -975,11 +1030,11 @@ category. The major ones are:
 
 - sending and receiving messages
 
-- setting up interprocess communication
+- setting up inter-process communication
 
-- setting up interprocess synchronization resources
+- setting up inter-process synchronization resources
 
-- transfering status information
+- transferring status information
 
 - attaching and detaching remote devices
 
@@ -1064,6 +1119,21 @@ functionality of the operating system and that make it convenient to
 develop software on the system.
 
 ---
+name: sysprog-app-activity
+count: false
+class: breakout
+### System Program or Application
+
+- Pick a partner or partners and have one person name a program or application
+and the other will decide whether it is an application or a system program using
+the criteria mentioned in the preceding slide.
+
+- Do you both agree? If not, why not? What is unclear?
+
+- Examples worth discussing: text editors such as .fixedblue[vi], IDEs such as
+.fixedblue[Eclipse], and packages such as .fixedblue[git].
+
+---
 name: sysprog-categories
 ### Categorizing System Programs
 
@@ -1075,11 +1145,11 @@ we can lump them into some large groups as follows. Some examples in Linux are g
 
 - .greenbold[Status information]
   - obtaining system information such as time, date (.fixedblue[date]), resource utilization (.fixedblue[memusage]),
-  process status (.fixedblue[ps]), device status
+process status (.fixedblue[ps]), device status
 
 - .greenbold[Software development]
   - compilers (.fixedblue[gcc]), linkers (.fixedblue[ld]), assemblers (.fixedblue[as]),
-  interpreters and shells (.fixedblue[bash]), debuggers (.fixedblue[gdb]), tracers, profilers, version control,  etc
+interpreters and shells (.fixedblue[bash]), debuggers (.fixedblue[gdb]), tracers, profilers, version control,  etc
 
 
 ---
@@ -1088,18 +1158,18 @@ name: sysprog-categories-1
 
 - .greenbold[Program loading and execution]
   - absolute loaders, relocatable loaders,  dynamic linker/loaders (.fixedblue[ld-linux]),
-   object dumpers (.fixedblue[objdump]), signal tracers (.fixedblue[strace]), etc.
+object dumpers (.fixedblue[objdump]), signal tracers (.fixedblue[strace]), etc.
 
 - .greenbold[Communication and network services]
   - remote logins (.fixedblue[ssh]), communicating with servers (.fixedblue[curl]),
-    remote file transfer (.fixedblue[sftp],.fixedblue[scp]), send messages to a screen (.fixedblue[write])
+remote file transfer (.fixedblue[sftp],.fixedblue[scp]), send messages to a screen (.fixedblue[write])
 
   - browsers, email clients, and such are applications, not system software.
 
 - .greenbold[Background services]
   - services that run in the background include ssh daemons (.fixedblue[sshd]),
-   printer daemons (.fixedblue[lpd], .fixedblue[cupsd]), various other network daemons,
-  and so on. They are started up at boot time and usually remain running until shutdown.
+printer daemons (.fixedblue[lpd], .fixedblue[cupsd]), various other network daemons,
+and so on. They are started up at boot time and usually remain running until shutdown.
 
 ---
 name: prog-development
@@ -1117,14 +1187,14 @@ was targeted towards making program development environments as productive as po
 --
 
 - Program development tools such as
-.greenbold[editors], .greenbold[preprocessors], .greenbold[compilers],
+.greenbold[editors], .greenbold[pre-processors], .greenbold[compilers],
 .greenbold[linkers], .greenbold[debuggers], .greenbold[profilers], and .greenbold[dynamic linker/loaders]
 have long been integrated into operating system packages.
 
 --
 
 - Understanding all of the steps that turn source code into a running process makes
-it easier to understand the reasons for many decisons in the design of operating systems.
+it easier to understand the reasons for many decisions in the design of operating systems.
 
 
 ---
@@ -1165,7 +1235,7 @@ Suppose also that there are external dependencies:
 .fixedblue[io.c] contains calls to the .fixedblue[C] standard  library and
 .fixedblue[mathstuff.c] makes calls to the .fixedblue[C] math library.
 
-The first step is  to compile all source code files to produce corresponding .redbold[relocatable] ]object files
+The first step is  to compile all source code files to produce corresponding .redbold[relocatable] object files
 as follows:
 ```bash
    gcc -c main.c
@@ -1252,7 +1322,7 @@ This is possible because its code is .greenbold[relocatable code].
 In older systems,  the default was that the libraries were combined into the program executable by the
 linker when it created the executable. This is call .bluebold[static linking].
 
-Modern systems usually default to linking libraries at runtime, which is called
+Modern systems usually default to linking libraries at run-time, which is called
 .bluebold[dynamic linking].
 
 There are two copies of a library, a statically-linkable  and a dynamically-linkable
@@ -1575,14 +1645,14 @@ Now, most operating systems are written in a mix of assembly and .fixedblue[C] a
 - The libraries are written in .fixedblue[C] and/or .fixedblue[C++].
 
 - Some systems programs are also written in scripting languages such as
-PERL, Python, and shell langauges such as .fixedblue[bash].
+PERL, Python, and shell languages such as .fixedblue[bash].
 
 --
 
 The drawback of implementing an operating system in a higher level language
 is reduced speed, although two facts ameliorate this:
 - compilers have gotten very good at optimizing code, and
-- modern processors use hyperthreading to reduce the
+- modern processors use hyper-threading to reduce the
 effects of memory delays caused by dependencies in the code.
 
 ---
@@ -1779,9 +1849,21 @@ MINIX 1.0 was a UNIX-derived operating system designed to run on the Intel 8088
 processor, and was .greenbold[system-call compatible] with .bluebold[Seventh Edition Unix].
 Its source code was in his book, _ Operating Systems: Design and Implementation_.
 
-???
-have them read about the Torvalds-Tanenbaum debate,
-at https://en.wikipedia.org/wiki/Tanenbaum%E2%80%93Torvalds_debate
+---
+name: microkernel-activity
+count: false
+class: breakout
+### The Torvalds-Tanenbaum Debate
+
+- Read about the Torvalds-Tanenbaum debate in
+at [Wikipedia](https://en.wikipedia.org/wiki/Tanenbaum%E2%80%93Torvalds_debate).
+Since it is a lot of reading, just read the section entitled "The Debate".
+
+- What were the major disagreements?
+
+- Were they settled?
+
+
 ---
 name: microkernels-modern
 ### Modern Microkernels
@@ -1843,7 +1925,7 @@ a monolithic system but it also uses loadable kernel modules.
 Windows operating systems are mostly monolithic but provides support for separate subsystems
 (which they call .greenbold[operating-system personalities]) that run as user-mode processes.
 
-Some operating systems were created as hybrids, the most noteable example being
+Some operating systems were created as hybrids, the most notable example being
 .bluebold[macOS] and .bluebold[iOS].
 
 macOS is a complex, partially layered system, built on top of the .greenbold[Darwin] kernel.
@@ -1931,6 +2013,7 @@ temporary RAM location to the actual root file system location.
 and then starts servers such as web servers, ssh servers, print services, and so on.
 
 - Eventually, it displays a login prompt.
+
 ---
 name: references
 ### References

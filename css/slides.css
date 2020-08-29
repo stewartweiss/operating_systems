@@ -12,6 +12,19 @@
     background: rgb(225, 229, 231);
 }
 
+.activity-format {
+    background: rgb(204, 204, 250);
+}
+
+.remark-slide>.breakout{
+     border: 50px;
+     border-color: rgb(137, 171, 192);
+     border-style: solid;
+     background-color:hsl(208, 39%, 94%);
+     color: rgb(65, 106, 133);
+}
+
+
 body {
     font-family: 'Droid Sans', sans-serif;
     margin:0;

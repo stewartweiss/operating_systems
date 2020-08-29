@@ -54,7 +54,7 @@ name:toc
 [Operating System Requirements](#opsys-requirements)<br>
 [Other Considerations](#opsys-requirements2)<br>
 [Additional Operating System Requirements](#opsys-requirements3)<br>
-[Categories of Services Provided By Operating Systems](#opsys-service-categories)<br>
+[Operating System Services](#opsys-service-categories)<br>
 [Trying to Define "Operating System"](#opsys-defs)<br>
 [System Programs](#system-programs)<br>
 [The General Structure of a Typical Computer](#computer-org-overview)<br>
@@ -103,11 +103,11 @@ name:toc
 [Multiprogramming](#multiprogramming-2)<br>
 [Batch Processing](#multiprogramming-3)<br>
 [Interactive Computing](#interactive-computing)<br>
-[Timesharing Infrastructure](#timesharing)<br>
+[Time-sharing Infrastructure](#timesharing)<br>
 [Multitasking](#multitasking)<br>
 [Protection Levels](#protection-levels)<br>
 [Use of Dual-Mode Operation](#dual-mode2)<br>
-[Depiction of System Call in Linux](#syscall-graphic)<br>
+[System Call Schematic in Linux](#syscall-graphic)<br>
 [Timers](#timers)<br>
 [Process Management: What are Processes?](#processes)<br>
 [Process Management](#process-management)<br>
@@ -197,22 +197,22 @@ machines or other .greenbold["things"].
 
 --
 
-   - .bluebold[Hardware] include processors, I/O devices, all types of memory and
+  - .bluebold[Hardware] includes processors, I/O devices, all types of memory and
 secondary storage.
 
 --
 
-   - .bluebold[Software] is either the .greenbold[operating system] or the software
+  - .bluebold[Software] includes the .greenbold[operating system] and the software
 that uses it, which is called the .greenbold[application layer].
 
 --
 
-     - The <span class=bluebold>operating system  </span> is the software that interacts directly
+  - The <span class=bluebold>operating system  </span> is the software that interacts directly
 with the hardware; applications do not.
 
 --
 
-     - <span class=bluebold> The application layer </span> includes software development tools, web
+  - <span class=bluebold> The application layer </span> includes software development tools, web
 browsers, all types of media editors and viewers, shells, commands, etc.
 <span class=redbold>_User data is part of the application layer_ </span>.
 
@@ -228,10 +228,10 @@ The components of a computer system form a sequence of .greenbold[layers]:
 
 Only adjacent layers have interactions with each other. .redbold[For example],
 
-   - applications do not directly communicate with or control hardware, and
+  - applications do not directly communicate with or control hardware, and
 
-   - users only interact with the application layer (which includes shells like
-     `bash` in Linux.)
+  - users only interact with the application layer (which includes shells like
+.fixedblue[bash] in Linux.)
 
 ---
 name: opsys-requirements
@@ -242,15 +242,19 @@ system has three important responsibilities:
 
    1. The operating system alone must control the hardware resources.
 
+--
+
    1. The operating system alone must enable and control the execution of all
    other software on the computer.
+
+--
 
    1. The operating system must give users the ability to develop and
   run applications and manage their data.
 
 --
 
-.redbold[But these are not the only things for which it is responsible].
+.redbold[But these are not the only things for which operating systems are responsible].
 
 
 ---
@@ -266,14 +270,13 @@ is required to do.
 There are requirements coming from .redbold[what users want]:
 
 --
-   - Users want their time spent on the computer to be used efficiently.
+   - Users want their time on the computer to be spent .redbold[efficiently].
 
-   - Users want their data to be secure.
+   - Users want their data to be .redbold[secure].
 
-   - Users want using the computer to be as convenient and easy as possible.
+   - Users want using the computer to be as .redbold[convenient] and easy as possible.
 
-   - Users may want to be able to share data and applications selectively with other
-users.
+   - Users may want to be able to .redbold[share] data and applications .redbold[selectively with other users].
 
 --
 
@@ -284,13 +287,13 @@ This leads to  additional requirements:
 
 --
 
-   - The computer resources should be utilized as efficiently as possible,
+   - The computer resources should be .redbold[utilized as efficiently as possible],
 maximizing the amount of work it performs per unit time.
 
-   - The computer resources should be protected from all possible intentional and unintentional
+   - The computer resources should be .redbold[protected] from all possible intentional and unintentional
 abuses.
 
-   - It should be possible to allocate resources as needed among various users.
+   - It should be possible to .redbold[allocate resources as needed] among various users.
 
 ---
 name: opsys-requirements3
@@ -321,7 +324,7 @@ and .redbold[maximize the utilization] of all hardware resources in the system.
 
 ---
 name: opsys-service-categories
-### Categories of Services Provided By Operating Systems
+### Operating System Services
 
 The most common services performed by operating systems can be categorized as follows.
 
@@ -340,7 +343,7 @@ communication, and security
 
 --
 
-- .greenbold[Communication] - providing mechanisms for running programs to communicate
+- .greenbold[Communication] - providing mechanisms that allow running programs to communicate
 
 --
 
@@ -349,7 +352,7 @@ communication, and security
 --
 
 - .greenbold[Protection and  security] - preventing unauthorized or improper access to all
-resources, and protecting users from each others attempts to invade privacy or
+resources, and protecting users from each other's attempts to invade privacy or
 corrupt data.
 
 --
@@ -378,8 +381,8 @@ We discuss system programs shortly.
 
 --
 
-To remove all ambiguity in this course,  the  .redbold[operating system is defined as]
-.redbold[ the kernel program and nothing more.]
+To remove all ambiguity in this course,  we make the following definition:
+the  .redbold[operating system is the kernel program and nothing more.]
 
 ---
 name: system-programs
@@ -403,21 +406,38 @@ list directories, and so on.
 On a .greenbold[Linux system], system programs include most of the commands that
 you typically type on the command line. To be more precise, these are commands that are found
 in the directories,
-`/bin`,
-`/usr/bin`,
-`/usr/sbin`, and
-`/sbin`.
+.fixedblue[/bin],
+.fixedblue[/usr/bin],
+.fixedblue[/usr/sbin], and
+.fixedblue[/sbin].
 
 Almost all of these programs can only be invoked as commands on the
 command line in a terminal window, but there are some that can (also) be invoked through a graphical
-user interface such as `Gnome` using menus or clickable icons.
+user interface such as .fixedblue[Gnome] using menus or clickable icons.
 
 --
 
 .redbold[Do not confuse system programs with applications.] Applications are usually
 programs that you install. Some applications come "bundled" with the operating
 system for your convenience. Applications are typically installed in the directories
-`/usr/local/bin` or `/opt`.
+.fixedblue[/usr/local/bin] or .fixedblue[/opt].
+
+---
+name: system-prog-activity
+count: false
+class: breakout
+### System Program Activity
+
+Take a look in the .fixedblue[\bin] directory on .fixedblue[eniac.cs.hunter.cuny.edu]
+to see what commands are in it:
+
+- Login to .fixedblue[eniac.cs.hunter.cuny.edu]
+
+- Type the command
+```bash
+ls /bin
+```
+ and record three different commands that you see there. These are system programs.
 
 
 ---
@@ -441,7 +461,7 @@ A modern, general-purpose computer consists of one or more .greenbold[CPUs], one
 .greenbold[memory units],  and a set of .greenbold[device controllers], all of which are connected
 by a common .greenbold[bus], usually called the .greenbold[system bus].
 The figure below illustrates how these components inter-connect. Notice that there
-is a separate line labelled "interrupts", to be discussed shortly.
+is a separate line labeled "interrupts", to be discussed shortly.
 
 .center[
   <img src="figures/os-layout.png" width=100% alt="interrupt timeline"/>
@@ -534,6 +554,8 @@ The primary purpose of the device drivers
 is to provide a higher layer of abstraction, so that the operating system programmers do not
 need to know the details of the device controllers to write code to perform tasks
 using those devices.
+
+--
 
 .redbold[For example], a serial port might only present two "public" functions,
 one to send data and  one to receive data.
@@ -838,13 +860,15 @@ serviced by the CPU, it should be ignored.
 Most systems have a method of prioritizing interrupts, either in hardware alone,
 or in both hardware and software.
 
+--
+
 #### .redbold[Example]
 
 The .greenbold[mask register] can be used to set the interrupt priority level of the
 processor using a left-to-right ordering of the mask bits.
 
-- If an interrupt occurs whose bit is to the left of another one, it has higher
-priority. By turning off all bits to the right of a given bit, the processor masks all
+- .redbold[If an interrupt occurs whose bit is to the left of another one, it has higher priority].
+By turning off all bits to the right of a given bit, the processor masks all
 interrupts lower than a given level.
 
 - If an interrupt occurs that is lower priority than the current priority
@@ -859,7 +883,7 @@ at that priority level.
 name: exceptions
 ### Traps and Exceptions
 
-In English, an exception is an uncommon event. In computing it is supposed to be
+In English, an .greenbold[exception] is an uncommon event. In computing it is supposed to be
 an uncommon event.
 
 An .bluebold[exception] is a software-generated interrupt. It is caused by the
@@ -868,6 +892,8 @@ execution of a software instruction. Examples of exceptions are
 - floating-point errors such as divide-by-zero,
 - attempts to execute invalid opcodes, and
 - attempts to access memory locations outside of the process's allowed memory.
+
+--
 
 The term .bluebold[trap] is often used as a synonym for exception. Some people
 make a subtle distinction between traps and exceptions. For example, the Intel 80x86
@@ -891,7 +917,7 @@ name: io-cycle
 ### Interrupt-Driven I/O
 
 .left-column[
-Recall that modern operating systems are interrupt driven; they
+Recall that modern operating systems are interrupt-driven; they
 only run as a result of interrupts.
 
 All I/O occurs as a result of interrupts.
@@ -911,12 +937,17 @@ layout: true
 
 ---
 name: storage
-class: center, middle, inverse
-## Storage
+background-image: url(figures/storage.jpg)
+class: center, middle
+# Storage
 
-We review concepts of storage as well as the various types of storage used
+We review concepts of storage and the various types of storage used
 in computer systems.
 
+.bottom-left[
+image (cropped): [Smuconlaw](https://commons.wikimedia.org/wiki/File:Archaeology_storage_room,_Heritage_Conservation_Centre,_Singapore_-_20141125-01.jpg),
+[CC-BY-SA](https://creativecommons.org/licenses/by-sa/4.0/).
+]
 ---
 template: tinted-slide
 layout: true
@@ -1844,8 +1875,8 @@ A .bluebold[process] is a program in execution.
 Multiple copies of the same program can be run simultaneously by the same or
 different users.
 
-.redbold[For example], there can be many instances of  `bash`, `firefox`,
-or the `SSH` daemon, `sshd` running on a shared computer.
+.redbold[For example], there can be many instances of  .fixedblue[bash], .fixedblue[firefox],
+or the .fixedblue[SSH] daemon, .fixedblue[sshd] running on a shared computer.
 
 Each instance has its own "state", including the program counter,
 specifying the location of next instruction to execute.
@@ -1868,9 +1899,20 @@ even a modestly small, shared computer system.
 In short, a process is the .greenbold[unit of work] in an operating system -
 it is the  entity that the operating system manages.
 
-???
-Ask what else is part of the state, and what other programs are shared.
-Use ps -ef to view running processes.
+---
+name: process-activity
+count: false
+class: breakout
+### Process Activity
+
+- What else is part of the state of a process? List five different components.
+
+- Besides the applications and programs mentioned already, what are more examples
+of commonly shared programs? Name three more.
+
+- Login to a .fixedblue[cslab] host and use the command .fixedblue[ps -efw]
+to view the list of running processes. Find more examples of programs that are
+being run by multiple processes.
 
 
 
@@ -2031,10 +2073,24 @@ file system-related activities:
 - providing security and privacy of files and directories
 
 
-???
-Ask them to look up how media is formatted and what "putting a file system on it" means
+---
+name: fs-activity
+count: false
+class: breakout
+### File System Activity
 
-Have them investigate types of file systems - FAT, NTFS, EXT4
+- Explain what it means to create a file system on some medium such as a disk.
+What "things" are created?
+
+- Find the command(s) that can create a file system in Linux. List them.
+
+- What commands can create
+
+  - a  FAT32 file system on a USB drive?
+  - an NTFS file system on a hard drive?
+  - an ext4 file system on a hard drive?
+
+
 
 ---
 name: storage-management
@@ -2132,7 +2188,7 @@ the device in advance.
 For example, the code in a program that opens a file and then reads it, is the
 same whether then file is on an internal hard disk, a USB device, or a magnetic tape.
 
-In UNIX, for example, the `read()` system call has the same arguments regardless
+In UNIX, for example, the .fixedblue[read()] system call has the same arguments regardless
 of whether it is reading from a file, a pipe, a terminal device, or a network interface.
 
 --
@@ -2194,7 +2250,7 @@ and other entities needing privilege, and .redbold[processes of that user inheri
 and to control what they can do collectively to controlled files and other entities.
 Processes of a user in a group inherit those privileges.
 
-- .greenbold[Privilege escalation] (such as `sudo` in Linux) allows a user to change to an effective identity that has
+- .greenbold[Privilege escalation] (such as .fixedblue[sudo] in Linux) allows a user to change to an effective identity that has
 greater privilege.
 
 ---

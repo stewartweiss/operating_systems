@@ -82,6 +82,39 @@ name:toc
 [How a Shell Works](#shell-example)<br>
 [Concurrency](#concurrency)<br>
 [Cooperating Processes](#cooperating-procs)<br>
+[Reasons for Processes to Cooperate](#cooperating-procs-2)<br>
+[Example: The Chrome Browser](#browser-example)<br>
+[Interprocess Communication Methods](#ipc-types)<br>
+[The Shared Memory Model](#shared-mem-model)<br>
+[Shared Memory Support in Linux](#shared-mem-support)<br>
+[The Message-Passing Model](#message-passing-1)<br>
+[Message Passing Implementation](#message-passing-2)<br>
+[IPC Models Visualized](#ipc-types-2)<br>
+[Issues In Message Passing](#message-passing-issues)<br>
+[Direct Communication](#direct-communication)<br>
+[Indirect Communication](#indirect-communication)<br>
+[Synchronous Operations](#message-passing-synch)<br>
+---
+### Table of Contents
+
+[Asynchronous Operations](#message-passing-asynch)<br>
+[Buffering in Message-Passing](#buffering)<br>
+[Pipes](#pipes-1)<br>
+[Pipes Named and Unnamed](#pipes-2)<br>
+[Unnamed Pipes](#unnamed-pipes)<br>
+[Using Unnamed Pipes](#unamed-pipes-2)<br>
+[Drawbacks of Unnamed Pipes](#unnamed-pipes-3)<br>
+[Named Pipes](#named-pipes)<br>
+[Creating and Using Named Pipes](#name-pipes-2)<br>
+[Producer Consumer Problem](#producer-consumer-problem)<br>
+[Producer Consumer Examples](#prod-cons-2)<br>
+[Producer Consumer Problem: Shared Memory](#shared-mem-prod-consumer)<br>
+[Shared Memory Producer Code](#shared-mem-producer-1)<br>
+[Shared Memory Consumer Code](#shared-mem-consumer-1)<br>
+[Correctness of Shared Memory Solution](#shared-mem-prod-consumer-2)<br>
+[Producer Consumer Problem: Message-Passing](#message-passing-prod-cons)<br>
+[Message-Passing Producer Code](#message-passing-producer-1)<br>
+[Conclusion](#conclusion)<br>
 [References](#references)<br>
 <!--TOC_END-->
 
@@ -247,7 +280,7 @@ template: tinted-slide
 layout: true
 ### The Memory Image
 
-A simplified diagram of a process's  memory image, based on ELF, is shown here.
+A simplified diagram of a process's  memory image, based on __ELF__, is shown here.
 
 .left-column-larger[
 {{content}}
@@ -333,7 +366,7 @@ How is the information to create a process stored in an executable file?
 
 - The format of the executable program file depends on the operating system
 (see [Chapter 2, Portability](chapter02.html#portability));
-in POSIX systems such as Linux, it is .greenbold[ELF].
+in __POSIX__ systems such as Linux, it is .greenbold[ELF].
 
 
 ---
@@ -628,6 +661,28 @@ about  .greenbold[threads].
 They play an important role in modern programming and in operating systems.
 
 ---
+name: task_struct-activity
+count: false
+class: breakout
+### A .fixedblue[task_struct] Activity
+
+- The actual Linux .fixedblue[task_struct] source code is available on our server.
+
+- Login to .fixedblue[eniac.cs.hunter.cuny.edu] and then login to
+any of the .fixedblue[cslab] hosts using .fixedblue[ssh].
+
+- Navigate to the directory
+.fixedblue[/data/biocs/b/student.accounts/cs340_sw/resources].
+
+- Open the file .fixedblue[sched.h] using any editor such as .fixedblue[pico],
+.fixedblue[nano], .fixedblue[emacs], or .fixedblue[vim].
+
+- Search for the beginning of the structure (.fixedblue[struct task_struct]) and then
+try to find all members of this structure that are linked lists. Name at least fice of them.
+
+
+
+---
 name: scheduling
 ### Process Scheduling
 
@@ -699,7 +754,7 @@ spending most of their time doing a lot of computing. They are called .bluebold[
 processes.
 
 Ensuring a good mix of processes means having a mix of I/O-bound and compute-bound
-processes that will keep the CPU bzusy while keeping .greenbold[response times] low.
+processes that will keep the CPU busy while keeping .greenbold[response times] low.
 .bluebold[Response time] is the time between when a request is made to a process
 and that process responds to that request.
 
@@ -887,8 +942,19 @@ Notice that .fixedblue[mate-session] is the root here, and .fixedblue[mate-termi
 its child, and .fixedblue[bash], its child, and that the two commands,
 .fixedblue[ps] and .fixedblue[grep], are children of .fixedblue[bash] and hence siblings.
 
-???
-exercise - have them try to create the deepest tree that they can and display it with this command.
+---
+name: process-tree-activity
+count: false
+class: breakout
+### Process Tree Activity
+
+- Try to create the deepest process tree that they you can in such a way
+that you can display it with the .fixedblue[ps -efwjH ]command.
+
+- Now use the .fixedblue[pstree] command to do the same thing.
+
+- If you know how to save the output of this command to a file, save it to show
+to the class.
 
 ---
 name: process-creation-2
@@ -914,7 +980,7 @@ This involves significant overhead, which we will discuss soon.
 
 --
 
-In Windows, the .fixedblue[CreateProcess()] function
+In __Windows__, the .fixedblue[CreateProcess()] function
 expects the name of a program that the child will execute, as well as many other
 parameters. Therefore the child process can  start running with a different program.
 
@@ -1037,6 +1103,26 @@ system call is used.
 ]
 
 ---
+name: fork-activity
+count: false
+class: breakout
+### A .fixedblue[fork] Activity
+
+- Login to .fixedblue[eniac.cs.hunter.cuny.edu] and then login to
+any of the .fixedblue[cslab] hosts using .fixedblue[ssh].
+
+- Navigate to the directory
+.fixedblue[/data/biocs/b/student.accounts/cs340_sw/demos].
+
+- There is a program there named .fixedblue[forkdemo1.c]. Copy it to your
+home directory, and there, using any editor of
+your choice, modify the argument to .fixedblue[sleep()], recompile and
+run the program. (.fixedblue[gcc -o forkdemo1 forkdemo1.c] will do.)
+
+- How does the behavior change?
+
+
+---
 name: fork-overhead
 ### Overhead of .fixedblue[fork()]
 
@@ -1066,7 +1152,7 @@ etc.)
 
 There are alternative methods of creating a process that have less overhead:
 .fixedblue[vfork()] does not involve copying the address space - it is like the
-Windows mechanism - it expects a program argument so that it can immediately
+__Windows__ mechanism - it expects a program argument so that it can immediately
 create an address space with that program.
 
 
@@ -1234,12 +1320,15 @@ layout: true
 name: concurrency
 ### Concurrency
 
-Two processes are .bluebold[concurrent] if their computations overlap in time.
+Two processes are .bluebold[concurrent] if their computations .redbold[can]
+overlap in time.
+- The two processes might run on two separate processors at the same time, or
+they might run on a single processor, with their instructions time-sliced on it.
 
 --
 
-A collection of processes is .bluebold[concurrent] if for any pair of processes in the
-collection, the processes in the pair overlap in time.
+A collection of processes is .bluebold[concurrent] if  any pair of processes is
+concurrent.
 
 --
 
@@ -1247,8 +1336,8 @@ You may sometimes see references to .greenbold[concurrent programs] or .greenbol
 
 --
 
-A .bluebold[concurrent program] (.bluebold[concurrent system])
-is a program (system) that consists of more than one module or unit that can be executed
+A .bluebold[concurrent program] (or .bluebold[concurrent system])
+is a program (or system) that consists of more than one module or unit that can be executed
 concurrently.
 
 - Usually there is an assumption that the order in which the different units execute
@@ -1257,51 +1346,989 @@ does not affect the outcome of the computation.
 --
 
 .redbold[Operating systems are concurrent systems]. They consist of many processes that can
-execute at the same time. This is why we study concurrent processes and how they
+execute at the same time. This is why, in a class on operating systems,
+we study concurrent processes and how they
 can communicate with each other.
 
 ---
 name: cooperating-procs
 ### Cooperating Processes
 
-Processes executing concurrently in the operating system can be classified as
-either .greenbold[independent]  or .greenbold[cooperating] processes.
+Processes executing concurrently in any system, and in particular in an operating system,
+can be classified as either .greenbold[independent] processes  or .greenbold[cooperating] processes.
 
-- Two or more processes are .bluebold[independent] of each other if neither
+--
+
+- Two or more processes are .bluebold[independent] (_of each other_) if neither
 affects the computation of the other.
 
-- Two or more processes are .bluebold[cooperating] if
+- Two or more processes are .bluebold[cooperating] (_with each other_) if
 each can affect or be affected by the computation of the other.
 
-Affecting a computation means changing the output or the outcome in some way.
+- "Affecting a computation" means changing the output or the outcome of the
+computation in some way.
+ - .redbold[Example]. One process might  write to the part of a shared, open file
+from which the other reads.
+
+---
+name: cooperating-procs-2
+### Reasons for Processes to Cooperate
 
 
-#### Reasons for Cooperating:
+Why are there processes that cooperate with each other?
 
-- Data sharing:
- Since several applications may be interested in the same piece of information
+--
+
+- .redbold[Data sharing].
+Two or more programs may need to access and/or modify the same information at the
+same time. For example, when we issue a command such as
+  ```bash
+$ grep "some pattern" myfiles | awk '{print $1}'
+  ```
+  the .fixedblue[grep] program writes output to a hidden buffer that is being read concurrently
+by the .fixedblue[awk] program.
+
+  The '.fixedblue[|]'  is the .fixedblue[bash] .fixedblue[pipe] operator; it causes .fixedblue[bash]
+to start the .fixedblue[grep] program and the .fixedblue[awk] program simultaneously,
+and to cause the output of .fixedblue[grep] to become the input of .fixedblue[awk].
+
+--
+
+- .redbold[Computation speedup].
+A solution to a problem can be decomposed into sub-tasks that can run
+in parallel and exchange information and/or synchronize with each other.
+When designed well, the solution runs faster than a single process solution.
+
+--
+
+- .redbold[Modularity].
+A large program can be decomposed into separate modules
+that can run concurrently to make it easier to modify and maintain, to debug, and
+to document and understand. Because they run concurrently, the modules will
+most likely need to modify shared data and hence will be cooperating processes.
+
+---
+name: browser-example
+### Example: The Chrome Browser
+
+Modern web browsers allow multiple websites to be open at the same time in
+separate tabs.
+
+Most websites have active scripting such as __Javascript__. If the scripts have errors
+then, if the browser runs in a single process, one faulty script can make the entire
+browser crash or become so slow that no other sites can be viewed.
+
+Google's .bluebold[Chrome] browser is a concurrent program, consisting of three different
+types of processes:
+- a .redbold[browser process] that manages the user interface and all disk and network I/O;
+
+- a .redbold[renderer process] that renders web pages. A renderer process is what
+reads and interprets scripts such as __HTML__ and __Javascript__.
+Usually, a renderer is created for each separate website, so problems in one website
+do not affect others.
+
+- a .redbold[plug-in process] for each type of .greenbold[plug-in]. The plug-in
+code is run inside this process.
+
+---
+name: ipc-types
+### Interprocess Communication Methods
+
+Processes that cooperate in order to complete one or more tasks almost always
+need to communicate with each other.
+
+.bluebold[Interprocess communication] (.bluebold[IPC]) is simply communication between
+pairs of processes or sometimes among more than two processes.
+
+.redbold[How do processes communicate with each other?]
+
+--
+
+Sometimes the communication requires sharing data.
+One method of sharing data is by sharing a common file, or sharing a memory-resident
+resource such as shared variables. This method requires that the processes
+synchronize their access to this resource.
+
+--
+
+Another paradigm involves passing data back and forth through some type of
+communication channel that provides the required synchronous access.
+
+--
+
+In short, there are two general models of IPC:
+
+- the .redbold[shared memory model], and
+- the .redbold[message-passing model].
+
+---
+name: shared-mem-model
+### The Shared Memory Model
+
+.redbold[The shared memory model can be used for IPC only when the processes are running on
+the same machine.]
+
+In this model, processes communicate by reading data from
+and writing data to a region of .bluebold[shared memory] to which each process
+has access.
+
+--
+
+Ordinarily, processes have address spaces that are not shared with each other;
+one process cannot share a variable with another for example.
+
+The exception is a special type of process known as a .greenbold[thread], or a
+.greenbold[light-weight process]. Threads can share an address space. Chapter 4
+covers threads.
+
+--
+
+In order for processes to share a region of memory, the operating system must
+provide operations to allow processes to create regions of memory that can be shared
+and to access them and control access to them by other processes.
+
+--
+
+.redbold[When processes share memory to communicate, they are in grave danger!]
+They must synchronize their access to it otherwise they risk bad problems.
+This is the subject of Chapter 6.
+
+---
+name: shared-mem-support
+### Shared Memory Support in Linux
+
+In Linux, there are a few different ways in which this shared memory can be
+created. Since Linux has some calls from the System V version of UNIX, there is
+an API based on System V:
+
+- The .fixedblue[shmget()], .fixedblue[shmat()], .fixedblue[shmctl()],
+and .fixedblue[shmdt()] system calls create, attach, control, and detach
+regions of memory that can be shared.
+
+--
+
+Linux also supports a POSIX shared memory API. This is a more portable way for
+processes to communicate through shared memory. These are
+POSIX-compliant library functions that provide IPC through shared memory:
+These functions include
+ - .fixedblue[shm_open()]
+ - .fixedblue[ftruncate()]
+ - .fixedblue[mmap()]
+ - .fixedblue[munmap()]
+ - .fixedblue[shm_unlink()]
+
+Together they allow a process to create an initially empty shared memory region, alter its size
+dynamically, map it to its address space and unmap it, and remove it when they are
+finished with it.
+While it is open, processes can read from and/or write to this shared memory to exchange data.
 
 
-- Computation speedup.
-If we want a particular task to run faster, we must break it into subtasks,
-each of which will be executing in parallel with the others. They will need to exchange
-data or synchronize. These topics are explored in Chapter 6.
+---
+name: message-passing-1
+### The Message-Passing Model
+
+The message-passing model allows processes to communicate using .greenbold[messages].
+A .bluebold[message] is often a short, chunk of bytes, but it need not be.
+Messages can be fixed-size or variable-size, depending on the implementation.
+
+One major advantage of message-passing over the shared memory model is that the
+.redbold[processes do not need to be running on the same processor or even the same machine to communicate.]
+They just need to be connected by a network.
+
+--
+
+An IPC system that uses message-passing provides an API that processes can use
+to communicate. The two most important primitives are
+
+- .fixedblue[send([destination], message)]
+- .fixedblue[receive([source], message)]
+
+Usually the destination is a required parameter.super[1], and usually the source is not
+required, so the receiver receives from .greenbold[any] process.
+
+--
+
+The most popular and most prevalent message-passing library is the
+.bluebold[Message Passing Interface], or .bluebold[MPI].
+.fixedblue[MPI] is a specification or an API, and there are both commercial
+and open source implementations of it. On Linux, one can install
+.fixedblue[Open MPI], a free and open source implementation of it.
+
+.footnote[
+1 If a specific process is not specified as a destination, it can be used as a .greenbold[broadcast]
+]
+
+---
+name: message-passing-2
+### Message Passing Implementation
+
+If processes reside on the same machine, the kernel itself can support a message-passing
+system  based on the use of a .bluebold[message queue]:
+
+- The send operation would write a message into the message queue, and
+- the receive operation would read a message from that queue.
+
+--
+
+But message-passing is more general than this and depends on the concept of an
+abstraction called a .greenbold[communication link].
+
+A .bluebold[communication link] is a communication channel that connects two or
+more processes.
+
+A .bluebold[channel] is a logical message queue that connects one process's
+output port to another process's input port. It need not be a physical queue.
+It is reliable in the sense that:
+
+- .redbold[Data sent to the input port appear on the output port in the same order].
+- .redbold[No data are lost and none are duplicated].
+
+--
+
+#### Exchanging Information
+
+Two processes that want to communicate first establish a communication link
+between them.
+
+They then use the send and receive primitives to exchange data over the link.
+
+---
+name: ipc-types-2
+### IPC Models Visualized
+
+The two different methods of IPC are depicted below for processes residing on the
+same physical computer. In both cases, the kernel
+is responsible for supporting the IPC, either by providing a shared region of
+memory, or by providing a message-passing API and queue.
+
+.left-column[
+<img src="figures/ipc-sharedmem.png" width=100% alt="shared memory ipc">
+.center[Shared Memory Model]
+]
+
+.right-column[
+<img src="figures/ipc-messagepassing.png" width=105% alt="message passing ipc">
+.center[Message-Passing Model]
+]
+
+---
+name: message-passing-issues
+### Issues In Message Passing
+
+There are many questions that must be answered to implement message-passing:
+
+--
+
+- How are links created?
+
+--
+
+- Can a link be associated with more than two processes, or with exactly two?
+
+--
+
+- Can two processes share more than one link?
+
+--
+
+- Are messages fixed or variable size?
+
+--
+
+- Are links unidirectional or bi-directional, i.e., do we need two
+separate links for messages from .fixedblue[P] to .fixedblue[Q] and from .fixedblue[Q] to .fixedblue[P]?
+
+--
+
+- How are links .bluebold[named]: using .greenbold[direct] or .greenbold[indirect communication]?
+
+--
+
+- Is communication greenbold[synchronous] or greenbold[asynchronous]?
+
+--
+
+- Do links have .greenbold[buffering]? If so
+ - are they limited or unlimited size?
+ - and is buffering  automatic or explicit?
 
 
-- Modularity.
-We may want to construct the system in a modular fashion,
-dividing the system functions into separate processes or threads.
+---
+name: direct-communication
+### Direct Communication
+
+Processes that want to communicate need to establish the communication link.
+Do they name .greenbold[each other] to exchange data across a link,
+or do they name some .greenbold[third-party object]?
+
+In .bluebold[direct communication], processes explicitly name each other in the send and receive
+operations, using some form of process name or id, as in:
+
+```C
+send(Q, message);    /* send a message to Q */
+receive(P, message); /* recive a message from P */
+```
+
+- Sender and receiver ids are bound at compile time. .redbold[Major drawback].
+- Links are established automatically between every pair of processes in the communication system.
+- A link is associated with exactly one pair of communicating processes.
+- There is a single link between each pair or processes.
+- The link might  be unidirectional or  bi-directional.
+
+Naming can also be asymmetric:
+```C
+send(Q, message);      /* send a message to Q */
+receive(&id, message); /* receive a message from any process, store identity in id */
+```
+---
+name: indirect-communication
+### Indirect Communication
+
+In indirect communication message-passing systems, the processes send to a
+.bluebold[mailbox] or .bluebold[port] and receive from that mailbox.
+
+- A mailbox is simply an object with a unique id into which messages can be placed  and from
+which they can be removed.
+- It can be owned by the kernel or by a process.
+
+Usage is as follows, assuming .fixedblue[A] is a mailbox identifier:
+
+```C
+send(A, message);    /* send a message to mailbox A */
+receive(A, message); /* retrieve a message from mailbox A */
+```
+--
+
+Answers to some of the previous questions from the [earlier slide](#message-passing-issues):
+
+- A link is established between a pair of processes only if both
+have a shared mailbox.
+- A link may be associated with more than two processes.
+- A pair of communicating processes may have multiple links, but
+each link corresponds to one mailbox.
+- Links may be unidirectional or bi-directional.
+
+--
+
+There are questions related to what happens when
+multiple processes communicate through a single mailbox,
+and when the kernel is not the owner, neither of which we address here.
+
+---
+name: message-passing-synch
+### Synchronous Operations
+
+A process is .bluebold[blocked] if it is not allowed or possible to execute
+any instructions because it is waiting for an event to take place.
+
+For example, when a C++ program executes a statement such as
+```C++
+cin << x;
+```
+<!-- -->
+it is blocked until the input is available.
+
+--
+
+A send operation is defined to be a .bluebold[blocking send] if the sending process is
+blocked until the message is received by the receiving process or by a mailbox.
+
+A receive operation is a .bluebold[blocking receive] if the receiver is blocked
+until a message is available.
+
+--
+
+Blocking operations like these are called .bluebold[synchronous] operations
+because they cause the process to be synchronized with the event of message
+delivery or receipt.
+
+--
+
+If a send and a receive are both blocking, then the sender and the receiver
+both wait for the other to reach the communication instruction. This is
+called a .bluebold[rendezvous] because the two processes "meet" at their points
+of communication.
+
+---
+name: message-passing-asynch
+### Asynchronous Operations
+
+Operations that are not blocking are called is .bluebold[non-blocking] operations.
+
+--
+
+If a send operation is non-blocking, then the process does not block to wait for
+the message to be delivered; it continues to the next instruction as soon as the data
+has been copied out of the parameter to the call.
+
+--
+
+If a receive operation is non-blocking,  then the process does not block to wait for
+the data to arrive. If the data is available, it receives it, and if not it either
+receives a null message of some kind or a special value that means the data is not available.
+
+These non-blocking message-passing operations are called .bluebold[asynchronous]
+operations.super[1].
+
+.footnote[
+1 Asynchronous sends and receives have a different meaning from asynchronous I/O.
+In asynchronous input, for example, the process eventually receives data but it does not necessarily
+receive it at the point of executing the input instruction.
+
+]
+
+--
+
+Message-passing may be either .greenbold[blocking] or .greenbold[non-blocking].
+Some libraries support both types of operation.
+
+---
+name: buffering
+### Buffering in Message-Passing
+
+When links are implemented, regardless of whether direct or indirect communication
+is used,  there is usually some type of buffer in which messages are stored temporarily.
+
+--
+
+.redbold[This buffer is almost always a FIFO queue].
+
+The buffer capacity affects whether operations are synchronous or not. If the queue has
+
+- .redbold[zero capacity], then there is no buffering. A sending process is blocked until a
+receiver can rendezvous with it. .redbold[It is a synchronous communication.]
+
+--
+
+- .redbold[bounded capacity], then if the queue is not full when a sender sends,
+the message is placed in the queue, and the sender continues execution, otherwise
+the queue is full and the sender blocks until space is available in the queue.
+.redbold[Sending can be both synchronous and asynchronous].
+
+--
+
+- .redbold[unbounded capacity], then the sender never blocks because there is
+always room in the queue. .redbold[Sending is asynchronous.]
+
+---
+name: pipes-1
+### Pipes
+
+We have used the .fixedblue[bash pipe] operator in a few examples in the preceding
+slides. Another example of its use is
+```bash
+$ last | grep 'reboot'
+```
+which connects the output stream of .fixedblue[last] to the input stream of .fixedblue[grep],
+so that the only lines of output will be those output lines of .fixedblue[last] that
+contain the word '.fixedblue[reboot]'.
+
+--
+
+This operator makes use of the lower-level, underlying .bluebold[unnamed pipe] facility
+of UNIX, which also exists in other operating systems such as __Windows__ (called
+.bluebold[anonymous pipes].)
+
+This pipe can be visualized as in the following diagram.
+
+.center[
+<img src="figures/pipe.png"  width=60% alt="simple pipe">
+]
+
+--
+
+An unnamed pipe is like a .greenbold[conveyor belt]
+consisting of a fixed number of blocks that can be filled and emptied.
+Each write fills as many blocks as needed, up to the maximum pipe size,
+and if the pipe size limit was not reached,
+makes a new block available for the next write.
+Filled blocks are conveyed to the pipe's read-end,
+where they are emptied when read.
+
+---
+name: pipes-2
+### Pipes Named and Unnamed
+
+
+Pipes can be .greenbold[named] or .greenbold[unnamed]. A pipe, _named or unnamed_, is a message-passing mechanism
+.redbold[that can be used only by processes on the same machine].
+
+As a message-passing mechanism, pipes guarantee that
+
+- data is neither lost or duplicated,
+- arrives in the same order it was written, and
+- provides the synchronous access described earlier.
+
+--
+
+But other questions arise:
+
+- What is the difference between named and unnamed pipes?
+
+--
+
+ .redbold[Unnamed pipes can only be used between related processes], such as a parent
+and a child, or sibling processes. .redbold[Named pipes can be used by unrelated processes]
+because they have names in the file system to which processes can refer.super[1].
+
+.footnote[
+1 Although they have names in the file system, they do not have contents as files.
+This will be explained shortly.]
+
+--
+
+- Is the flow in a pipe uni-directional or bi-directional? (Bi-directional means
+that data can flow in two directions, whereas uni-directional means it flows
+in one direction only.)
+
+--
+
+ For named pipes, it is bi-directional. For unnamed pipes it is uni-directional.
+
+
+---
+name: unnamed-pipes
+### Unnamed Pipes
+
+To understand pipes, you need to know that UNIX systems use small integers to represent
+open files, in the same way that C++ uses stream identifiers and C uses FILE pointers.
+These small integers are called .bluebold[file descriptors].
+
+--
+
+In UNIX, unnamed pipes are created with the .fixedblue[pipe()] system call:
+```C
+#include <unistd.h>
+int pipe(int filedes[2]);
+```
+The system call .fixedblue[pipe(fd)], given an integer array .fixedblue[fd]
+of size 2, creates a pair of file descriptors, .fixedblue[fd[0]] and .fixedblue[fd[1]],
+pointing to the "read-end" and "write-end" of the pipe respectively.
+
+Data flows from the write-end to the read-end. The process can create child
+processes that will have copies of these file descriptors. The children can
+communicate with the parent or with each other by using these file descriptors.
+The next slide illustrates.
+
+---
+name: unamed-pipes-2
+### Using Unnamed Pipes
+
+Typically, a process will create a pipe, and then fork a child process.
+After the fork, the parent and child will each have copies of the read
+and write-ends of the pipe, so there will be two data channels and a total of
+four descriptors, as shown below.
+
+.center[
+<img src="figures/pipe2.png"  width=60% alt="full-duplex pipe">
+]
+POSIX requires that the pipe be used in half-duplex mode,
+meaning data can flow in only one direction, so  each process must close one end of the pipe:
+.center[
+<img src="figures/pipe3.png"  width=60% alt="half-duplex pipe">
+]
+
+Now data flows only from parent to child.
+
+---
+name: unnamed-pipes-3
+### Drawbacks of Unnamed Pipes
+
+Unnamed pipes are an elegant mechanism, however, they have several drawbacks:
+
+--
+
+- They can only be shared by processes with a common ancestor,
+such as a parent and child, or multiple children or descendants of a parent
+that created the pipe.
+
+--
+
+- They cease to exist as soon as the processes that are using them terminate,
+so they must be recreated every time they are needed.
+
+--
+
+- If you are trying to write a server program with which clients can communicate,
+the clients will need to know the name of the pipe through which to communicate,
+but an unnamed pipe has no such name.
+
+
+
+---
+name: named-pipes
+### Named Pipes
+
+In UNIX, .bluebold[Named pipes] are also called .bluebold[FIFOs].
+
+What distinguishes named pipes from unnamed pipes is that
+
+--
+
+- They exist as directory entries in the file system and therefore
+have associated permissions and ownership.
+
+--
+
+- They can be used by processes that are not related to each other.
+
+--
+
+- They can be created and deleted at the shell level or at the programming level.
+
+--
+
+- FIFOs allow bidirectional communication, but in only one direction at a time
+(half-duplex mode.)
+
+--
+
+Otherwise they are used in the same way:
+It is written to and read from in the same way and it
+behaves the same way with respect to the consequences of opening and
+closing it when various processes are either reading or writing or doing neither.
+
+---
+name: name-pipes-2
+### Creating and Using Named Pipes
+
+
+In UNIX, a named pipe is created with the .fixedblue[mkfifo()] system call:
+```C
+#include <sys/types.h>
+#include <sys/stat.h>
+int mkfifo(const char *pathname, mode_t mode);
+```
+The call .fixedblue[mkfifo("MY_PIPE", 0666)] creates a FIFO named .fixedblue[MY_PIPE].
+The "0666" specifies the permissions associated with the file. In this case, assuming
+nothing unusual.super[1], it will be readable and writable by everyone.
+
+The convention is to use UPPERCASE letters for the names of FIFOs.
+
+.footnote[
+1 The actual permission depends on the process's owner's .fixedblue[umask] variable.
+]
+
+Named pipes can be used to implement local servers - servers running on the local
+machine. They cannot be used over a network.
+
+If you want a mechanism for IPC over a network, you need to use .greenbold[sockets].
+We do not discuss sockets here; it is far too extensive a subject to pay tribute
+to in a short sequence of slides.
+
+---
+name: producer-consumer-intro
+layout: false
+class: center, middle, inverse
+## The Producer Consumer Problem
+To illustrate how processes can cooperate using shared memory and message-passing,
+we apply them to a well-known problem in computer science.
+
+---
+template: tinted-slide
+layout: true
+
+---
+name: producer-consumer-problem
+### Producer Consumer Problem
+
+The example of cooperating processes that we gave earlier, in which a pair of
+processes was created by the following command:
+  ```bash
+$ grep "some pattern" myfiles | awk '{print $1}'
+  ```
+exemplifies a very common paradigm that occurs in computer systems,
+--
+ namely
+
+- a pair of processes in which one has the role of a .greenbold[producer]
+of data, in this case the .fixedblue[grep] process, and one has the role of a
+.greenbold[consumer] of data, here the .fixedblue[awk] process,
+- together with a .greenbold[shared buffer] into which the producer writes the data and from which the
+consumer reads the data.
+
+.center[
+<img src="figures/prodconsumer.png" width=80% alt="producer-consumer">
+]
+
+--
+
+The problem is how to design the producer and consumer code so that, in their exchange
+of data, no data is lost or duplicated, data is read by the consumer in the order it is written
+by the producer, and both processes make as much progress as possible. This is
+known as the .bluebold[Producer-Consumer Problem].
+
+---
+name: prod-cons-2
+### Producer Consumer Examples
+
+The producer-consumer problem models many activities that occur in a compter system,
+and in particular, within the operating system.
+
+--
+
+- .redbold[Print spooling]: Processes send jobs to a printer by copying the files to a spool directory,
+from which the print spooling process prints them in the order in which they arrive. The
+directory is a buffer.
+
+--
+
+- .redbold[Compilation]: In a compiler, the parser produces code that compiler converts to assembler code,
+which the assembler translates to object code. The optimizer modifies the object code to make
+it run faster.
+
+--
+
+- .redbold[Buffered I/O]: Whether it is reading or writing, I/O is buffered. When a process
+requests data from a file, for example, the disk driver delivers blocks of data that are
+stored in kernel memory. The process reading the file, gets chunks from kernel memory as
+they become available. The disk driver is the producer, and the reading process is the
+consumer.
+
+---
+name: shared-mem-prod-consumer
+### Producer Consumer Problem: Shared Memory
+
+- We assume the following shared data and global initializations:
+  ```C
+    \#define BUFFER_SIZE 10
+    typedef struct {
+        /* actual data declarations would be here */
+    } item;
+
+    item buffer[BUFFER_SIZE];  /* declare shared buffer */
+    int in = 0;  /* in is the next position to fill the buffer */
+    int out = 0; /* out is the next position from which to extract data from the buffer */
+  ```
+
+- We also assume that all processes can read and write  .fixedblue[buffer] as
+well as shared variables .fixedblue[in] and .fixedblue[out], either because the
+processes are threads of the same program, or because they are processes that have
+ already used a shared memory library to set up shared memory.
+
+-  .fixedblue[buffer]  is a circular queue of size .fixedblue[BUFFER_SIZE],
+but it never uses more than .fixedblue[BUFFER_SIZE-1] elements, in order to
+distinguish empty queue and full queue conditions:
+  -    .fixedblue[in == out]  if and only if .fixedblue[buffer]  is empty, and
+  -   .fixedblue[(in +1) % BUFFER_SIZE == out] if and only if .fixedblue[buffer] is full
+
+
+---
+name: shared-mem-producer-1
+### Shared Memory Producer Code
+
+```C
+producer()
+{
+    item next_item; /* stores next item produced */
+
+    while (true) {
+        /* produce an item and store into next_item */
+        next_item = produce_new_item();
+
+        /* keep testing whether buffer is full */
+        while (((in + 1) % BUFFER_SIZE) == out)
+            ; /* do nothing because buffer is full  */
+
+        /* buffer is not full, so put item into buffer[in] and advance in */
+        buffer[in] = next_item;
+        in = (in + 1) % BUFFER_SIZE; /* advance in */
+    }
+}
+```
+
+- The .fixedblue[produce_new_item()] function would be replaced by code that actually
+produces a new item.
+
+- There is just a single producer process - this will not work if there is
+more than one.
+
+- Notice that the full condition will only change when the value of .fixedblue[out]
+changes. This is what the consumer process does. See the next slide.
+
+---
+name: shared-mem-consumer-1
+### Shared Memory Consumer Code
+
+```C
+consumer()
+{
+    item next_item; /* for storing item retrieved from buffer */
+
+    while (true) {
+        /* keep testing whether buffer is empty */
+        while (in == out)
+            ; /* do nothing because buffer is empty  */
+
+        /* buffer is not empty - get next item from buffer[out] and advance out */
+        next_item = buffer[out];
+        out = (out + 1) % BUFFER_SIZE;
+
+      /* consume the item that was copied into next_item */
+      consume_item(next_item);
+    }
+}
+```
+
+- The .fixedblue[consume_item()] function would be replaced by code that actually
+uses an item.
+
+- There is just a single consumer process - this will not work if there is
+more than one.
+
+- Notice that the empty condition will only change when the value of .fixedblue[in]
+changes. The producer must advance .fixedblue[in] for it to change.
+
+---
+name: shared-mem-prod-consumer-2
+### Correctness of Shared Memory Solution
+
+.redbold[Is this a correct solution?]
+--
+  .redbold[What do we mean by "correct"?]
+
+--
+
+When we stated the problem we required that:
+- no data is lost or duplicated,
+- data is read by the consumer in the order it is written by the producer, and
+- both processes make as much progress as possible.
+
+A solution is correct if and only if these three conditions are all true of it.
+
+--
+
+The first two conditions can be proved with formal arguments, which we will
+save for a later chapter, when we explore process synchronization.
+
+--
+
+The third condition is not well-defined. To be precise, for this problem,
+we mean that a producer is not delayed unless it cannot write its data into a free
+buffer, and a consumer is not delayed unless there is no data to consume.
+
+--
+
+.redbold[Try to prove that this is true].
+
+---
+name: message-passing-prod-cons
+### Producer Consumer Problem: Message-Passing
+
+A message-passing solution is simpler than a shared memory solution for several
+reasons:
+
+- There are no global variables or global data.
+
+- Message-passing libraries such as .fixedblue[MPI] make several guarantees:
+  - The order in which data is sent is the order in which it is received.
+  - No data is lost or duplicated.
+  - A process is .redbold[not blocked on sending] (using the simplest .fixedblue[send()])
+and a process is .redbold[blocked on receiving] only if no data is available.
+
+This means that the programmer does not have to handle details of synchronization -
+the library takes care of it.
+
+The solution that we show in the next slide assumes that:
+- there is a message-passing library with two operations, .fixedblue[send()] and .fixedblue[receive()],
+- that the producer and consumer processes are the only processes in the "communicator"
+system so that they can exchange messages, and that
+- .fixedblue[send()] requires no destination process because
+all processes other than the sender receive the message, and
+- .fixedblue[receive()] requires no source process because it receives any message
+sent to it.
+
+
+---
+name: message-passing-producer-1
+### Message-Passing Producer Code
+
+The simplicity of the pseudo-code solution, shown below, is apparent.
+An actual implementation based on .fixedblue[MPI]  adds more technical
+complexity but not more logic.
+
+
+
+.left-column[
+```C
+producer()
+{
+    item next_item;
+
+    while (true) {
+        /* produce an item and     */
+        /* store into next_item    */
+        next_item = produce_new_item();
+
+        /* send the produced item   */
+        /* directly to the consumer */
+        send(next_item);
+    }
+}
+```
+]
+.right-column[
+```C
+consumer()
+{
+    item next_item;
+
+    while (true) {
+      /* wait for an item to be    */
+      /* sent                      */
+      receive(next_item);
+
+      /* copy the item that     */
+      /* was sent into next_item */
+      consume_item(next_item);
+    }
+}
+```
+]
+
+---
+name: conclusion
+### Conclusion
+
+The process concept is fundamental to operating systems, and it is important to
+understand
+
+- what a process is,
+
+- how it is represented within the kernel,
+
+- what states of execution it may be in,
+
+- what operations the kernel must provide for process management,
+
+- what happens during context switches, and
+
+- what the various schedulers do.
+
+--
+
+Concurrency and the concept of cooperation among processes are equally fundamental ideas,
+and the different methods of interprocess communication are important to understand.
+
+--
+
+Processes require many resources. In the next chapter we will see that .redbold[threads]
+are so-called "light-weight processes" that use fewer resources.
+
+
 
 ---
 name: references
 ### References
 
-1. Daniel P. Bovet, Marco Cesati. _Understanding the Linux Kernel_, 3rd Edition. O'Reilly, 2006.
 
 1. Abraham Silberschatz, Greg Gagne, Peter B. Galvin. _Operating System Concepts_, 10th Edition.
 Wiley Global Education, 2018.
 
 1. The GNU Operating System. https://www.gnu.org/
+
+1. Stewart Weiss, _UNIX System Programming Lecture Notes_,
+http://www.compsci.hunter.cuny.edu/~sweiss/course_materials/unix_lecture_notes.php.
 
 
     </textarea>
