@@ -61,16 +61,17 @@ name:toc
 [Batch System Monitor](#batch)<br>
 [About System Calls](#system-calls-1)<br>
 [Application Programming Interfaces](#apis)<br>
+[A Bit About POSIX](#posix)<br>
 [A Subtle Distinction](#technicality)<br>
 [Example Using System Calls](#syscall-example)<br>
 [The .fixed[read] System Call in UNIX](#read-syscall)<br>
 [System Call Implementation](#syscall-implementation-1)<br>
 [System Call Parameter Passing](#syscall-parameters)<br>
 [Under the Hood: System Calls](#syscall-implementation)<br>
-[Illustration of the Complete Flow](#syscall-complete-flow)<br>
 ---
 ### Table of Contents
 
+[Illustration of the Complete Flow](#syscall-complete-flow)<br>
 [Flow of .fixed[read] System Call in Linux](#syscall-read)<br>
 [Categories of System Calls](#syscall-types)<br>
 [Process Control](#process-syscalls)<br>
@@ -93,10 +94,10 @@ name:toc
 [Dynamic versus Static Linking](#dynamic-vs-static)<br>
 [Advantages of Static Linking](#dynamic-vs-static-2)<br>
 [From Source to Executable, Visualized](#build-visualized)<br>
-[Portability](#portability)<br>
 ---
 ### Table of Contents
 
+[Portability](#portability)<br>
 [Solutions to Creating Portable Executables](#portability-solutions)<br>
 [Operating System Design](#opsys-design)<br>
 [Design Principles](#design-principles)<br>
@@ -497,7 +498,7 @@ output devices.
 ]
 
 .right-column[
-<img src="figures/multitouch_screen.svg" >
+<img src="figures/multitouch_screen.png" >
 ]
 
 .footnote[
@@ -616,6 +617,36 @@ The three most common APIs are the
 -  .bluebold[POSIX API] for POSIX-based systems, which includes
 virtually all versions of UNIX, Linux, and macOS, and
 - .bluebold[Java API] for the Java virtual machine (JVM)
+
+---
+name: posix
+### A Bit About POSIX
+
+POSIX is an acronym for
+the .bluebold[Portable Operating System Interface]. You will encounter references
+to POSIX so often that it merits a brief description here.
+
+POSIX is a family of standards specified by the .greenbold[IEEE Computer Society]
+for maintaining compatibility between operating systems.
+
+--
+
+The IEEE official description of it.super[1] states that,
+> POSIX defines a standard operating system interface and environment,
+> including a command interpreter (or “shell”), and
+> common utility programs to support applications portability at the source code level.
+
+.footnote[
+1 https://standards.ieee.org/standard/1003_1,2016Edition-0.html
+]
+
+It was intended originally to define standards for software compatibility
+with variants of Unix and other operating systems.
+
+--
+
+When you write code that uses the POSIX API, it can be run on any POSIX-compliant system.
+
 
 ---
 name: technicality
@@ -1567,7 +1598,7 @@ subset of the different operating systems derived from the original UNIX,
 written by Ken Thompson and Dennis Ritchie in  1969.
 
 .center[
-<img src="figures/Unix_timeline.png" width=70%>
+<img src="figures/Unix_timeline-2.png" width=70%>
 ]
 
 .footnote[
@@ -1706,7 +1737,7 @@ based on the description of it in _Modern Operating Systems_ by Andrew Tanenbaum
 
 
 .center[
-<img src="figures/linux_structure.svg"  width=80% alt="unix structure">
+<img src="figures/linux_structure.png"  width=80% alt="unix structure">
 ]
 .footnote[
 Image by ScotXW. CC BY-SA. https://upload.wikimedia.org/wikipedia/commons/6/65/Simplified_Structure_of_the_Linux_Kernel.svg
@@ -1833,7 +1864,7 @@ as illustrated below:
 
 
 .center[
-<img src="figures/microkernel_comparison_1.svg" width=70%  alt="microkernel" >
+<img src="figures/microkernel_comparison_1.png" width=70%  alt="microkernel" >
 ]
 
 .footnote[
@@ -1943,7 +1974,7 @@ The Darwin kernel is the core, and is composed of a microkernel and elements
 of BSD.
 
 .center[
-<img src="figures/Mac_OS_X_architecture.svg" width=55% alt="MacOS">
+<img src="figures/Mac_OS_X_architecture.png" width=55% alt="MacOS">
 ]
 
 .footnote[

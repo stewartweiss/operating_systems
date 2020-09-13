@@ -343,7 +343,8 @@ communication, and security
 
 --
 
-- .greenbold[Communication] - providing mechanisms that allow running programs to communicate
+- .greenbold[Communication] - providing mechanisms that allow programs to communicate
+with each other
 
 --
 
@@ -357,7 +358,7 @@ corrupt data.
 
 --
 
-- .greenbold[Accounting] - monitoring and recording various performance metrics and
+- .greenbold[Accounting] - monitoring and recording various performance and
 utilization metrics, for both users and the system.
 
 
@@ -428,7 +429,7 @@ count: false
 class: breakout
 ### System Program Activity
 
-Take a look in the .fixedblue[\bin] directory on .fixedblue[eniac.cs.hunter.cuny.edu]
+Take a look in the .fixedblue[/bin] directory on .fixedblue[eniac.cs.hunter.cuny.edu]
 to see what commands are in it:
 
 - Login to .fixedblue[eniac.cs.hunter.cuny.edu]
@@ -460,7 +461,7 @@ name: computer-org-overview
 A modern, general-purpose computer consists of one or more .greenbold[CPUs], one or more
 .greenbold[memory units],  and a set of .greenbold[device controllers], all of which are connected
 by a common .greenbold[bus], usually called the .greenbold[system bus].
-The figure below illustrates how these components inter-connect. Notice that there
+The figure below illustrates how these components interconnect. Notice that there
 is a separate line labeled "interrupts", to be discussed shortly.
 
 .center[
@@ -491,7 +492,7 @@ is called the .bluebold[width] of the bus.
 
 #### Memory
 .bluebold[Memory units] are self-contained primary storage, i.e. random-access,
-devices. They are usually volatile and are connected directly to the system bus.
+devices. They are usually .redbold[volatile] and are connected directly to the system bus.
 
 Memory units are controlled by a .bluebold[memory controller], which
 synchronizes access to the memory from the devices that want to access it,
@@ -527,9 +528,9 @@ a Parallel ATA disk controller.
 
 --
 
-This is why the code written to control these controllers are separated
-from the rest of the operating system and placed into their own modules
-called .greenbold[device drivers].
+This is why the code written to control each controller is separated
+from the rest of the operating system and placed into its own module
+called a .greenbold[device driver].
 
 ---
 name: device-drivers
@@ -550,10 +551,10 @@ memory location, or to stop or start the device.
 
 Most operating systems have the ability to detect which device drivers they need
 and integrate them into the operating system itself as separate modules.
-The primary purpose of the device drivers
+_The primary purpose of the device drivers
 is to provide a higher layer of abstraction, so that the operating system programmers do not
 need to know the details of the device controllers to write code to perform tasks
-using those devices.
+using those devices._
 
 --
 
@@ -561,7 +562,7 @@ using those devices.
 one to send data and  one to receive data.
 A device driver that implements these functions would communicate with the
 particular serial port controller installed on the computer.
-Different serial ports have different instruction sets and architectures,
+.redbold[Different serial ports have different instruction sets and architectures],
 so each serial port may have a different device driver,
 but each device driver hides the hardware-specific differences and
 presents the same  software interface to the software layer above.
@@ -608,7 +609,7 @@ name: read-operation
 ### Typical I/O Read Operation
 
 To illustrate, we discuss what happens when a running program issues a request
-to read data from a hard disk. The program's read request causes a
+to read data from a hard disk. The program's .greenbold[read request] causes a
 device driver to run. We ignore the steps leading to this for now.
 
 --
@@ -667,9 +668,9 @@ A device needing attention can request an interrupt by sending a signal to the p
 signal is called an .bluebold[interrupt request]. The acronym .bluebold[IRQ]
 is short for interrupt request.
 
-The distinction between interrupts, interrupt requests, and the events
-requiring attention is often blurred, and people may call any of them
-an interrupt for short. Thus, if a hard disk completes a read operation
+.redbold[The distinction between interrupts, interrupt requests, and the events requiring attention is often blurred],
+and people may call any of them an .bluebold[interrupt] for short.
+Thus, if a hard disk completed a read operation
 and issued an IRQ as a result of it, we might say it issued an interrupt, or it
 raised an interrupt, and we might also say the read event itself caused an
 interrupt.
@@ -839,7 +840,7 @@ used to determine whether or not to disable (i.e., mask) the interrupt. Maskable
 interrupts are non-critical.
 
 A .bluebold[non-maskable interrupt] is one that cannot be disabled. It
-must be serviced. They are not affected by the interrupt mask register. Examples
+must be serviced. It is not affected by the interrupt mask register. Examples
 are errors from memory and timer interrupts.
 
 In some systems, disabling an interrupt means ignoring it completely. In others,
@@ -857,7 +858,7 @@ request occurs, it should interrupt the current ISR.
 On the other hand, if an interrupt request has lower priority then one being
 serviced by the CPU, it should be ignored.
 
-Most systems have a method of prioritizing interrupts, either in hardware alone,
+Most systems have a method of .greenbold[prioritizing interrupts], either in hardware alone,
 or in both hardware and software.
 
 --
@@ -867,17 +868,20 @@ or in both hardware and software.
 The .greenbold[mask register] can be used to set the interrupt priority level of the
 processor using a left-to-right ordering of the mask bits.
 
-- .redbold[If an interrupt occurs whose bit is to the left of another one, it has higher priority].
-By turning off all bits to the right of a given bit, the processor masks all
-interrupts lower than a given level.
+- Each device has an associated priority level, and the ISR for that device runs
+at that priority level. The priority level is an integer corresponding to a bit position.
 
-- If an interrupt occurs that is lower priority than the current priority
-level, it is ignored.
+- .redbold[If an interrupt occurs whose bit is to the left of another one, it has higher priority].
+If its mask bit is on, it is enabled, otherwise it is disabled.
+
+- By turning off all bits to the right of a given bit, the processor masks all
+interrupts whose priority is lower than the given one.
+
+- If a lower priority interrupt occurs, it is ignored.
 If one occurs that is at equal or higher priority, the currently running ISR is
 interrupted and the ISR for the new one runs.
 
-- Each device has an associated priority level, and the ISR for that device runs
-at that priority level.
+
 
 ---
 name: exceptions
@@ -930,6 +934,32 @@ to show how interrupts are used in the read operation.
 .right-column[
   <img src="figures/read-io-a.gif" width=100% alt="read i/o"/>
 ]
+
+---
+name: interrupt-activity
+count: false
+class: breakout
+### Interrupt Activity
+
+
+Take a look in the .fixedblue[/proc] directory on .fixedblue[eniac.cs.hunter.cuny.edu]
+to see what types of interrupts are hitting the CPUs recently:
+
+- Login to .fixedblue[eniac.cs.hunter.cuny.edu]
+
+- Navigate to the .fixedblue[/proc] directory:
+```bash
+cd /proc
+```
+
+- Make your terminal window as wide as possible.
+- Then, using a command such as .fixedblue[more], view the contents of the file
+named .fixedblue[interrupts]. There is a column for each logical CPU and a row for
+different interrupts.
+
+- Which type of interrupt has occurred the most and on which CPU.
+Write what you find as instructed in class.
+
 
 ---
 template: default
@@ -1242,6 +1272,8 @@ Many devices are slow devices that handle small chunks of data. For example,
 keyboards and pointing devices deliver a byte at a time. Other devices may be required
 to deliver thousands of bytes in a single I/O operation.
 
+--
+
 File operations typically cause the transfer of entire disk blocks, which can be
 anywhere from 1KB to 4KB or more.  To transfer this much data using the interrupt
 mechanism for each byte or word of data would require a lot of CPU time and a lot of
@@ -1255,10 +1287,14 @@ the operation of transferring large amounts of data to or from a device.
 The processor can continue to execute other instructions while the transfer
 takes place.
 
+--
+
 In DMA, the processor, under program control authorizes a device
 to take charge of the I/O transfers to memory,
 allowing it to be the .greenbold[bus master] until the I/O is completed.
 A device with this capability is called a .bluebold[DMA controller].
+
+--
 
 Many devices use DMA, including disk drive controllers, graphics cards,
 network cards and sound cards.
@@ -1467,7 +1503,7 @@ computer.super[1].
 
 .footnote[
 1 "To pull yourself up by your bootstraps" is the phrase people use to mean,
-"to elevate yourself without any outside help." In the early days, tarting a computer
+"to elevate yourself without any outside help." In the early days, starting a computer
 was like magic- a program needed to be loaded into memory and then run,
 but it needed to put itself there first,
 so the program needed to get itself into memory and run itself without outside help.
@@ -1776,7 +1812,7 @@ name: dual-mode2
 When the system is booted, the kernel runs in kernel mode.
 After it is booted, all user processes are run in user mode.
 
-Dual-mode operation makes it possible for user programs to requests services from the
+Dual-mode operation makes it possible for user programs to request services from the
 operating system without compromising security.
 
 --

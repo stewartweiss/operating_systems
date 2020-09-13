@@ -52,9 +52,12 @@ name:toc
 [Background](#process-background)<br>
 [The Process Abstraction](#process-abstraction)<br>
 [Processes, Concretely](#process-concretely)<br>
+[The Memory Image](#mem-image)<br>
 [From File to Process](#process-creation)<br>
 [Mapping the File to Memory](#elf-to-mem)<br>
 [Process Context](#process-context)<br>
+[Process Execution State](#process-context-2)<br>
+[Process State Transitions](#state-transitions)<br>
 [The Process Control Block](#pcb)<br>
 [The Contents of a PCB](#pcb-contents)<br>
 [The Linux .fixed[task_struct]](#pcb-linux)<br>
@@ -65,12 +68,12 @@ name:toc
 [The Short-Term, or CPU, Scheduler](#process-scheduler-1)<br>
 [Queuing of Processes](#process-queues)<br>
 [Context Switch](#context-switch)<br>
-[Process Creation Terminology](#process-creation-1)<br>
-[Viewing the Process Tree](#process-tree)<br>
-[Process Creation](#process-creation-2)<br>
 ---
 ### Table of Contents
 
+[Process Creation Terminology](#process-creation-1)<br>
+[Viewing the Process Tree](#process-tree)<br>
+[Process Creation](#process-creation-2)<br>
 [The Magic of .fixedblue[fork()]](#fork)<br>
 [The .fixedblue[fork] System Call](#fork-2)<br>
 [A .fixedblue[fork()] Example](#fork-demo)<br>
@@ -91,12 +94,12 @@ name:toc
 [Message Passing Implementation](#message-passing-2)<br>
 [IPC Models Visualized](#ipc-types-2)<br>
 [Issues In Message Passing](#message-passing-issues)<br>
-[Direct Communication](#direct-communication)<br>
-[Indirect Communication](#indirect-communication)<br>
-[Synchronous Operations](#message-passing-synch)<br>
 ---
 ### Table of Contents
 
+[Direct Communication](#direct-communication)<br>
+[Indirect Communication](#indirect-communication)<br>
+[Synchronous Operations](#message-passing-synch)<br>
 [Asynchronous Operations](#message-passing-asynch)<br>
 [Buffering in Message-Passing](#buffering)<br>
 [Pipes](#pipes-1)<br>
@@ -209,7 +212,7 @@ The switching is "under human radar", so to speak.
 
 --
 
-Operating system designers invented the concept of a process so that they could
+Operating system designers invented the concept of a .greenbold[process] so that they could
 reason about this activity and understand how to control it and ensure that
 everything was running correctly.
 
@@ -230,16 +233,17 @@ This is true whether it is a user program or a system program.
 
 A process is the .greenbold[unit of execution] managed by the kernel.super[1].
 
---
-
-This means that the kernel manages individual processes, not parts of processes,
-performing all tasks on them such as running them, giving them resources they need,
-deciding when they should be terminated, and so on.
-
-
 .footnote[
 1. In a batch system, the unit of execution is called a .bluebold[job].
+In Linux, the unit of execution is called a .bluebold[task].
 ]
+
+--
+
+This means that the kernel manages individual processes,
+performing all operations on them such as running them, giving them resources they need,
+deciding when they should be terminated, and so on.
+
 
 ---
 name: process-concretely
@@ -274,10 +278,9 @@ environment values, and much more.
 --
 
 The memory associated with a process is called its .bluebold[memory image].
+
 ---
 name: mem-image
-template: tinted-slide
-layout: true
 ### The Memory Image
 
 A simplified diagram of a process's  memory image, based on __ELF__, is shown here.
@@ -407,7 +410,26 @@ registers, including the stack pointer, and so on.
 
 --
 
-- It also has an .bluebold[execution state]. During its lifetime, the execution state of a process changes  as
+- It has many different identifiers such as its own unique identifier, its parent's
+id, and so on.
+
+--
+
+- A process can have resources such as .greenbold[open files], virtual .greenbold[terminal devices],
+and .greenbold[open directories].
+
+--
+
+- It has many different kinds of .greenbold[process attributes] such as
+.greenbold[priority levels] associated with it, as well as information
+about how it handles various .greenbold[signals].
+
+---
+name: process-context-2
+### Process Execution State
+
+One of the most important attributes of a process is its .bluebold[execution state].
+During its lifetime, the execution state of a process changes  as
 various events and actions take place. At any instant of time, the process can be in
 exactly one of several possible different states of execution:
 
@@ -431,8 +453,6 @@ exactly one of several possible different states of execution:
 
 ---
 name: state-transitions
-template: tinted-slide
-layout: true
 ### Process State Transitions
 
 ---
@@ -631,7 +651,8 @@ much more than this in an actual implementation.
 name: pcb-linux
 ### The Linux .fixed[task_struct]
 
-In Linux, processes are called .bluebold[tasks] and the PCB is
+In Linux, processes are called .bluebold[tasks], the PCB is called a
+.bluebold[process descriptor] and it is
 represented by a .fixedblue[C] struct called the .fixedblue[task_struct].
 
 The .fixedblue[task_struct] is a very large structure, with over one hundred
@@ -678,7 +699,8 @@ any of the .fixedblue[cslab] hosts using .fixedblue[ssh].
 .fixedblue[nano], .fixedblue[emacs], or .fixedblue[vim].
 
 - Search for the beginning of the structure (.fixedblue[struct task_struct]) and then
-try to find all members of this structure that are linked lists. Name at least fice of them.
+try to find all members of this structure that are linked lists.
+Name at least five of them and describe what they contain.
 
 
 
