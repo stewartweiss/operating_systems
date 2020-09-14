@@ -2222,7 +2222,7 @@ all I/O devices are accessible to programs without the program's needing to spec
 the device in advance.
 
 For example, the code in a program that opens a file and then reads it, is the
-same whether then file is on an internal hard disk, a USB device, or a magnetic tape.
+same whether the file is on an internal hard disk, a USB device, or a magnetic tape.
 
 In UNIX, for example, the .fixedblue[read()] system call has the same arguments regardless
 of whether it is reading from a file, a pipe, a terminal device, or a network interface.
@@ -2270,21 +2270,31 @@ There is a broad range of methods of providing protection and security in
 modern operating systems, as well as on-going research into operating system
 security.
 
-Unix and its derivatives, as well as Apple and Windows operating systems share
+Unix and its derivatives, as well as __Apple__ and __Windows__ operating systems share
 a common paradigm:
+
+--
 
 - .greenbold[User identities], such as user names and numeric ids,
 are assigned to each user.
 
+--
+
 - A system of .greenbold[authentication], such as passwords, two-factor authentication,
 cryptographic key-pairs, and so on, is used to authenticate logins.
+
+--
 
 - User identities are associated with .greenbold[privileges] and .greenbold[access rights] for all files
 and other entities needing privilege, and .redbold[processes of that user inherit those privileges].
 
+--
+
 - .greenbold[Group identifiers], such as a group id,  allow sets of users to be defined
 and to control what they can do collectively to controlled files and other entities.
 Processes of a user in a group inherit those privileges.
+
+--
 
 - .greenbold[Privilege escalation] (such as .fixedblue[sudo] in Linux) allows a user to change to an effective identity that has
 greater privilege.

@@ -76,16 +76,28 @@ name:toc
 [User Level Threads](#user-threads-1)<br>
 [A POSIX Threads Example](#pthreads-example-1)<br>
 [Some Explanation](#pthreads-2)<br>
+[Fork-Join Parallelism](#fork-join-1)<br>
+[Fork-Join in Pthreads](#fork-join-2)<br>
 [User Level Threads: Pros](#user-threads-pros)<br>
 [User Level Threads: Cons](#user-threads-cons)<br>
 [Kernel Level Threads](#kernel-level-threads-1)<br>
 [Kernel Level Threads: The Confusion](#kernel-level-threads-2)<br>
 [Kernel Level Threads: A Visualization](#kernel-level-threads-3)<br>
-[The Linux Definition of a Thread](#thread-linux-def)<br>
-[Kernel Threads in Linux](#kthread-example)<br>
-[A Linux Kernel Thread Example](#kthread-example)<br>
-[Kernel Threads in Linux](#linux-kernel-threads)<br>
+[About Kernel Level Threads in Linux](#linux-kernel-level-threads)<br>
+[Linux Kernel Level Thread Example](#kthread-example-2)<br>
+[Linux Kernel Level Thread Example](#kthread-example-info)<br>
 [Kernel Threads: Pros and Cons](#kernel-threads-2)<br>
+[Implementation of User Level Threads](#user-thread-models)<br>
+[Many-to-One (M:1) Threading Model](#many-to-one)<br>
+[Many-to-One (M:1) Threading Model Pros and Cons](#many-to-one-2)<br>
+[One-to-One (1:1) Threading Model](#one-to-one)<br>
+[One-to-One (1:1) Threading Model Pros and Cons](#one-to-one-2)<br>
+[Many-to-Many (M:N) Threading Model](#many-to-many)<br>
+[Many-to-Many (M:N) Threading Model Pros and Cons](#many-to-many-2)<br>
+---
+### Table of Contents
+
+[Implicit Threading](#implicit-threading-intro)<br>
 [Threading Issues](#thread-issues)<br>
 [References](#references)<br>
 <!--TOC_END-->
@@ -162,7 +174,7 @@ cover the following topics:
 
 - Multicore programming
 
-- Multi-threading models
+- Explicit Threading
 
 - Thread libraries
 
@@ -756,8 +768,8 @@ Plot by Daniels220 at English Wikipedia, CC BY-SA 3.0, https://commons.wikimedia
 name: multithreading
 layout: false
 class: center, middle, inverse
-## Multi-threading Models
-We examine different methods of implementing support for threads.
+## Multi-threading Models for Explicit Threading
+We examine different methods of implementing support for programmer-defined threads.
 
 ---
 template: tinted-slide
@@ -880,8 +892,8 @@ int main( int argc, char *argv[])
 name: pthreads-2
 ### Some Explanation
 
-In the preceding program, there are three calls to functions,
-which are highlighted, in the Pthreads API:
+In the preceding program, we highlighted the three calls to functions from
+the Pthreads API:
 
   ```C
   pthread_exit()
@@ -896,9 +908,68 @@ child thread makes a call to .fixedblue[pthread_exit()].
 
 --
 
-The library handles all of these calls by making calls to the underlying operating system
-thread support system, if it exists. If not, it simulates the operations within the process.
-This will be explained more later.
+One important point about these functions is that the library implements them
+by making calls to the underlying operating system thread support system, if it exists.
+If not, it simulates the operations within the process. This will be explained more later.
+
+--
+
+A second important point is that these three calls are .greenbold[fundamental]
+to the parallel programming paradigm used by  thread libraries such as Pthreads.
+They are the basis of a type of parallel programming called .redbold[fork-join parallelism].
+
+---
+name: fork-join-1
+### Fork-Join Parallelism
+
+.bluebold[Fork-join parallelism] is a parallel programming paradigm that applies to
+threads as well as to processes. We will use the Linux term "task" to refer to both.
+
+In fork-join parallelism, the idea is that when a task creates a new, parallel task,
+it has .bluebold[forked] that task. The two tasks run concurrently. The parent task
+.fixedblue[waits] for the child task to terminate in a type of function called a .bluebold[join].
+In Pthreads, the .fixedblue[pthread_join()] function does this. In Unix, the .fixedblue[wait()]
+function serves the same purpose.
+
+Suppose that various parallel tasks have been identified in a main program as follows:
+
+.center[
+<img src="figures/fork-join-1.png" width=50% alt="fork-join parallelism">
+]
+
+A multi-threaded program following the fork-join model can be represented by the graph:
+
+.center[
+<img src="figures/fork-join-2.png" width=80% alt="fork-join parallelism">
+]
+
+.footnote[
+Images from Wikipedia user A1 / CC BY (https://creativecommons.org/licenses/by/3.0)
+]
+---
+name: fork-join-2
+### Fork-Join in Pthreads
+
+The depiction in the preceding slide does not characterize the type of fork-join
+used by a library such as Pthreads.
+
+Pthreads does not provide a function to fork multiple threads simultaneously as is shown
+in that figure.
+
+Instead, .fixedblue[pthread_create()] must be called to fork one new thread at a time.
+
+To create the thread parallelism in which tasks A, B, C, and D execute concurrently,
+.fixedblue[pthread_create()] must be called three times, as shown below, and joined that many
+as well, calling .fixedblue[pthread_join()].  In the figure the edges represent the threads
+executing the operations that label them.
+
+.center[
+<img src="figures/pthread-fork-join.png" width=100% alt="fork-join parallelism">
+]
+
+The fork creates a new thread. The edges are labeled by the functions that the threads
+would execute.
+
 
 ---
 name: user-threads-pros
@@ -1031,13 +1102,12 @@ are both represented by a .fixedblue[task_struct].
 --
 
 What distinguishes threads from ordinary processes in Linux is that
-threads can share resources, such as their address space,
-whereas processes do not share any resources.
+.redbold[threads can share resources, such as their address space, whereas processes do not share any resources.]
 
 --
 
 The implication for the programmer is that the same system call can be
-used to create kernel level threads as processes:
+used to create kernel level threads as is used to create processes:
 ```C
 #define _GNU_SOURCE
 #include <sched.h>
@@ -1046,8 +1116,8 @@ int clone(int (*fn)(void *), void *child_stack,
                int flags, void *arg, ...
               /* pid_t *ptid, void *newtls, pid_t *ctid */ );
 ```
-It is a complex function to use; the .fixedblue[flags] parameter is used
-to tell the kernel which resources are shared.
+Because it is so generic, it is complicated to use; the .fixedblue[flags] parameter
+has many possible values that tell the kernel which resources are shared.
 
 The next slide has a small program that demonstrates using .fixedblue[clone()]  to create
 a thread.
@@ -1074,26 +1144,41 @@ int main(int argc, char* argv[])
 
     `unsigned long flags = CLONE_VM | SIGCHLD;` /* share address space */
     char buf[256];
-    strcpy(buf, "You, who are on the road must have a code\n that you can live by.");
+    strcpy(buf, "You, who are on the road must have a code that you can live by.");
     if (-1 == `clone(child_function, stack + STACK_SIZE, flags, buf)` )  exit(1);
 
     int status;
     if (-1 == wait(&status) )  exit(1);
-    printf("Thread exited with status %d. It filled buffer with:\n \"%s\"\n", status, buf);
+    printf("Thread exited with status %d. It filled buffer with:\n   \"%s\"\n",status,buf);
     return 0;
 }
 ```
 
-
-
 ---
-name: linux-kernel-threads
-### Kernel Threads in Linux
+name: kthread-example-info
+### Linux Kernel Level Thread Example
 
-To the Linux kernel, there is no concept of a thread.
-Linux implements all threads as processes in that they are represented by a
-.fixedblue[task_struct] and scheduled the same way, but with one major difference:
-a thread is a process that can share certain resources with other processes.
+When the preceding program is run, the session looks like
+
+```bash
+$ kernel_thread_demo
+Child gets buffer containing the string:
+   "You, who are on the road must have a code that you can live by."
+
+Child exited with status 0. It filled the buffer with:
+   "Teach your parents well"
+$
+```
+#### Some Notes:
+- The program must dynamically create a stack for the cloned thread.
+Because stacks grow from high to low memory, the starting address of the stack is
+the value of the address returned by .fixedblue[malloc()] plus the stack size.
+
+- The .fixedblue[CLONE_VM] flag is passed to .fixedblue[clone()]. This tells the kernel
+that the parent's memory is to be shared with the child rather than copied.
+
+- The .fixedblue[SIGCHLD] flag tells the kernel that the child will call .fixedblue[exit()]
+and the parent is going to .fixedblue[wait()] for the .fixedblue[SIGCHLD] signal to receive the child's termination status.
 
 ---
 name: kernel-threads-2
@@ -1124,6 +1209,180 @@ is more work in the kernel.
 therefore slower.
 
 - Representing threads within the kernel requires a complete PCB.
+
+---
+name: user-thread-models
+### Implementation of User Level Threads
+
+A user level thread library can be implemented in a few different ways,
+depending on the support from the underlying kernel.
+
+--
+
+If the underlying kernel has no support for threading at all, then the user
+level thread library must simulate all thread operations in user space.
+The library in this case uses what we call the .greenbold[Many-to-One] threading model,
+which we explain first.
+
+--
+
+If, on the other hand, the kernel has support for threading, there are two
+different choices of thread implementation:
+
+- The .greenbold[One-to-One Model]
+
+- The .greenbold[Many-to-Many Model]
+
+The differences between the different models have to do with
+how user level threads are related to kernel level threads.
+
+---
+name: many-to-one
+### Many-to-One (M:1) Threading Model
+
+This method is rarely used anymore and is mostly of historical interest.super[1].
+It was used originally because it requires no support for
+multi-threading at the kernel level and is the most portable,
+but it has significant performance problems.
+
+.footnote[
+1 The .greenbold[Green Threads] library in Solaris and early Pthreads on Linux used this approach.
+]
+
+All threads are implemented in user space within the process,
+which appears to the kernel to be an ordinary, single-threaded process.
+
+.center[
+<img src="figures/many-2-one.png" width=65% alt="many-to-one model">
+]
+---
+name: many-to-one-2
+### Many-to-One (M:1) Threading Model Pros and Cons
+
+
+The major .redbold[benefits] of this model are that it is portable and does not require
+any support from the underlying kernel.
+
+There are a few .redbold[drawbacks].
+
+--
+
+- One drawback is that it requires all blocking system calls to be simulated
+in the library by  non-blocking calls to the kernel,  which slows down system
+calls significantly.
+
+--
+
+- A second is a consequence of the first.
+Some .redbold[blocking system calls cannot be simulated by  non-blocking system calls];
+as a result, when a thread makes such a call the entire process is blocked.
+
+--
+
+
+- A third, major drawback is that a .redbold[program cannot take advantage of more than a single processor]
+because the kernel sees it as a single-threaded process (as a single schedulable unit.)
+
+---
+name: one-to-one
+### One-to-One (1:1) Threading Model
+
+The .bluebold[One-to-One model] assigns a kernel level thread to each user level thread.
+Implementations of .fixedblue[Pthreads] in current Linux versions and  __Windows__ systems use this approach.
+
+.center[
+<img src="figures/one-2-one.png" width=65% alt="one-to-one model">
+]
+
+In the figure above, each user level thread is associated with a real kernel level thread.
+In Linux, this simply means that the library uses the .fixedblue[clone()] system call
+to create the threads. .redbold[Each thread is seen by the kernel as a separately schedulable entity.]
+
+---
+name: one-to-one-2
+### One-to-One (1:1) Threading Model Pros and Cons
+
+This model has several .redbold[benefits]:
+
+- It is the simplest to implement within a library,
+
+- It provides the greatest possible concurrency because it can use as many processors
+as are available, up to the number of threads, and
+
+- One thread's blocking does not block other threads.
+
+--
+
+However, the .redbold[drawbacks] are the following.
+
+- Creating each thread is more expensive in terms of kernel resources,
+
+- Thread management is slower because most operations on threads require system calls, and
+
+- It is dependent on the multithreading model of the underlying kernel.
+
+---
+name: many-to-many
+### Many-to-Many (M:N) Threading Model
+
+The .bluebold[Many-to-Many model] is the most flexible of these models.
+It does not create a kernel level thread for each user level thread like the
+(1:1) model, nor does it force all of a program's threads to be scheduled
+on a single kernel level thread.
+
+Instead, the library
+.redbold[creates multiple kernel level threads and schedules user level threads on top of them.]
+Most M:N thread libraries will dynamically allocate as many kernel level threads as
+necessary to service the user level threads that are ready to run.
+
+
+.center[
+<img src="figures/many-2-many.png" width=65% alt="many-2-many model">
+]
+
+---
+name: many-to-many-2
+### Many-to-Many (M:N) Threading Model Pros and Cons
+
+This model has several  .redbold[benefits]. The most signifcant include:
+
+-  It does not use kernel resources for user level threads
+that are not actually runnable.
+
+- The library-level scheduler can
+switch between threads much faster because it does not make system calls.
+
+- It performs better than the others when user level threads synchronize with each other.
+
+- Applications that create large numbers of threads that only run
+occassionally perform better on this model than in the others.
+
+
+The .redbold[drawback] of this model is that
+it has more overhead and consumes more system resources
+because scheduling taks place in both the kernel among the kernel level
+threads for the process and in the library for the user level threads.
+
+---
+name: implicit-threading
+layout: false
+class: center, middle, inverse
+## Implicit Threading
+This section explores how threads can be created implicitly, with little
+programmer coding.
+
+---
+template: tinted-slide
+layout: true
+
+---
+name: implicit-threading-intro
+### Implicit Threading
+
+It is difficult for programmers to write concurrent programs in general, and writing
+multi-threaded programs is among the hardest of tasks. Handling synchronization,
+preventing various types of .greenbold[race conditions],
+
 
 
 ---
