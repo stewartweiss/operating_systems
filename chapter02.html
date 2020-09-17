@@ -132,7 +132,7 @@ The chapter  examines operating systems from three different perspectives:
 
 - through the set of .greenbold[interfaces] that it makes available to .greenbold[programmers];
 
-- through its .greenbold[design and implementation], of interest to those study and
+- through its .greenbold[design and implementation], of interest to those who study and
 design operating systems.
 
 It covers the following topics:
@@ -227,7 +227,7 @@ to run applications and programs. This is an important category of service.
 output. The operating system provides the environment in which this can happen.
 
 - .greenbold[File systems]: Users and their software can create and delete files and directories,
-read and modify them, rename them, search through them, list properties of them,
+read and modify them, rename them, search through them, list and modify their properties,
 and share and protect them. The operating system provides support for all of this.
 
 - .greenbold[Protection and security]: Users need control of who can access their data. The
@@ -440,6 +440,8 @@ commands that you know.
 - Use the .fixedblue[file] command to find the types of the non-built-in commands
 that you discovered.
 
+- Use the .fixedblue[help] command to see a list of the .fixedblue[bash] built-in commands.
+
 ---
 name: gui
 ### Graphical User Interface
@@ -509,7 +511,7 @@ Image from User:Willtron, CC BY-SA 1.0, https://commons.wikimedia.org/wiki/File:
 Touchscreen devices require a different interface:
 
 - actions and selections are based on .greenbold[gestures], which are not single point clicks, but
-motions, including location, velocity, and acceleration.
+.greenbold[motions], which are represented by location, velocity, and acceleration data.
 
 - keyboards are on-screen for text entry
 
@@ -680,7 +682,11 @@ name: syscall-example
 
 In Linux, the system call to read from a file is .fixedblue[read()], to write to
 a file is .fixedblue[write()], to open a file, whether for reading or writing,
-is .fixedblue[open()], and to create a new file is .fixedblue[creat()].
+is .fixedblue[open()], and to create a new file is .fixedblue[creat()].super[1].
+
+.footnote[
+1 This is not a typo; the .fixedblue[creat] call has no 'e' at the end.
+]
 
 .left-column-small[
 The Linux .fixedblue[cp] command has many uses, but the simplest use is to copy an existing
@@ -690,7 +696,7 @@ file to a new file:
 cp oldfile newfile
 ```
 ]
-A program that does this, with some pseudocode for error handling is shown to the
+A program that does this, with some pseudocode for error handling, is shown to the
 right.  It makes several system calls, which are highlighted in yellow.
 ]
 .right-column-large[
@@ -762,6 +768,7 @@ The page shows that .fixedblue[read] has three parameters:
 
 
 It returns a  .fixedblue[ssize_t] result, which is the number of bytes actually read.
+.fixedblue[ssize_t]  is a .fixedblue[C] signed integer type.
 
 ---
 name: read-syscall-activity
@@ -769,7 +776,10 @@ count: false
 class: breakout
 ### A .fixedblue[read] System Call Activity
 
-- Login to .fixedblue[eniac.cs.hunter.cuny.edu] and navigate to the directory
+- Login to .fixedblue[eniac.cs.hunter.cuny.edu] and then .fixedblue[ssh] into
+any .fixedblue[cslab] host.
+
+- Navigate to the directory
 .fixedblue[/data/biocs/b/student.accounts/cs340_sw/demos]
 
 - There you will find the file .fixedblue[mycp.c], which is a full version of the
@@ -780,6 +790,7 @@ program from the previous slide that copies one file to another.
 
 - Using a simple editor, make the buffer size larger and smaller, recompiling
 each time and running on some large file. How does buffer size affect running time?
+You can find large, readable files in <br>.fixedblue[/var/cache/apt/archives].
 
 
 
