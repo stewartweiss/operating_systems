@@ -102,6 +102,13 @@ h4 {
     /*font-size: 70%;*/
 }
 
+.abs-up10 {
+    position: absolute;
+    bottom: 10em;
+
+
+}
+
 .remark-code, .remark-inline-code {
     font-family: 'Ubuntu Mono';
     line-height: 1.15;
@@ -315,6 +322,12 @@ h4 {
     padding-left: 2em ;
     text-indent: -2em ;
 }
+
+.centered_60{
+    width: 60%;
+    margin:auto;
+}
+
 .zero_list {
   counter-reset: zero-counter -1;
   text-indent: -2ex;
@@ -366,10 +379,23 @@ float: left;
 padding:1% 5% 1% 1%;
 }
 
+.left-column-smallest {
+width: 20%;
+float: left;
+padding:1% 5% 1% 1%;
+}
+
+
 .right-column-large {
 width: 64%;
 float: right;
 padding:1% 1% 1% 5%;
+}
+
+.right-column-larger {
+width: 70%;
+float: right;
+padding:1% 1% 1% 2%;
 }
 
 
@@ -386,6 +412,7 @@ width: 24%;
 float: right;
 padding:1% 1% 1% 5%;
 }
+
 
 
 
@@ -424,4 +451,8 @@ tr:nth-child(odd), td {
 .sub{
    vertical-align: sub;
    font-size: 70%;
+ }
+
+.math-left-align .mjx-chtml.MJXc-display{
+    text-align: left !important;
  }

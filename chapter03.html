@@ -61,16 +61,19 @@ name:toc
 [The Process Control Block](#pcb)<br>
 [The Contents of a PCB](#pcb-contents)<br>
 [The Linux .fixed[task_struct]](#pcb-linux)<br>
+[What is Scheduling?](#scheduling-overview)<br>
 [Process Scheduling](#scheduling)<br>
 [Types of Process Scheduling](#scheduling-2)<br>
 [Medium-Term Scheduling](#medium-term-scheduler)<br>
 [The Swapper](#medium-term-scheduler-2)<br>
 [The Short-Term, or CPU, Scheduler](#process-scheduler-1)<br>
 [Queuing of Processes](#process-queues)<br>
-[Context Switch](#context-switch)<br>
 ---
 ### Table of Contents
 
+[Context Switch](#context-switch)<br>
+[Exceptions and Interrupts Revisited](#exceptions-revisited)<br>
+[Interrupts, System Calls, and Context Switches](#mode-changes)<br>
 [Process Creation Terminology](#process-creation-1)<br>
 [Viewing the Process Tree](#process-tree)<br>
 [Process Creation](#process-creation-2)<br>
@@ -91,12 +94,12 @@ name:toc
 [The Shared Memory Model](#shared-mem-model)<br>
 [Shared Memory Support in Linux](#shared-mem-support)<br>
 [The Message-Passing Model](#message-passing-1)<br>
-[Message Passing Implementation](#message-passing-2)<br>
-[IPC Models Visualized](#ipc-types-2)<br>
-[Issues In Message Passing](#message-passing-issues)<br>
 ---
 ### Table of Contents
 
+[Message Passing Implementation](#message-passing-2)<br>
+[IPC Models Visualized](#ipc-types-2)<br>
+[Issues In Message Passing](#message-passing-issues)<br>
 [Direct Communication](#direct-communication)<br>
 [Indirect Communication](#indirect-communication)<br>
 [Synchronous Operations](#message-passing-synch)<br>
@@ -117,6 +120,9 @@ name:toc
 [Correctness of Shared Memory Solution](#shared-mem-prod-consumer-2)<br>
 [Producer Consumer Problem: Message-Passing](#message-passing-prod-cons)<br>
 [Message-Passing Producer Code](#message-passing-producer-1)<br>
+---
+### Table of Contents
+
 [Conclusion](#conclusion)<br>
 [References](#references)<br>
 <!--TOC_END-->
@@ -408,6 +414,9 @@ completely represent a process.  It contains much more than the memory image.
 such as the current .bluebold[processor state], which includes the .greenbold[program counter],
 registers, including the stack pointer, and so on.
 
+ The complete set of data that is stored in the CPU registers is called the
+.bluebold[hardware context] of the process.
+
 --
 
 - It has many different identifiers such as its own unique identifier, its parent's
@@ -623,24 +632,24 @@ The information contained in a process control block includes (but is not limite
 the following:
 
 
-- .redbold[process execution state]: running, ready, waiting, and so on.
+- .red[process execution state]: running, ready, waiting, and so on.
 
-- .redbold[process identifiers]: process id and "related process identifiers"
+- .red[process identifiers]: process id and "related process identifiers"
 
-- .redbold[program counter]: location of next instruction to execute
+- .red[hardware context]: this consists of
+   - .red[program counter]: location of next instruction to execute
+   - .red[CPU registers]: contents of all other registers used by the process
 
-- .redbold[CPU registers]: contents of all registers used by the process
+- .red[CPU scheduling information]: execution priorities, scheduling queue pointers
 
-- .redbold[CPU scheduling information]: execution priorities, scheduling queue pointers
+- .red[memory management information]: maps  of all memory allocated to the process
 
-- .redbold[memory management information]: maps  of all memory allocated to the process
+- .red[accounting information]: CPU usage, clock time elapsed since start, time  limits
 
-- .redbold[accounting information]: CPU usage, clock time elapsed since start, time  limits
-
-- .redbold[I/O status information]: resources and I/O devices held by process,
+- .red[I/O status information]: resources and I/O devices held by process,
 list of open files
 
-- .redbold[related process lists]: pointers to list of children, siblings, parent
+- .red[related process lists]: pointers to list of children, siblings, parent
 
 --
 
@@ -702,6 +711,24 @@ any of the .fixedblue[cslab] hosts using .fixedblue[ssh].
 try to find all members of this structure that are linked lists.
 Name at least five of them and describe what they contain.
 
+---
+name: scheduling-overview
+### What is Scheduling?
+
+In computer science in general, .bluebold[scheduling] refers to the act of
+assigning resources to units of work that must be completed.
+
+In the context of operating systems, the "work" units are usually either
+.greenbold[threads].super[1], .greenbold[processes], or .greenbold[jobs], and the
+resources can be .greenbold[disk storage], .greenbold[memory], or
+a .greenbold[processing unit] such as a CPU or core.
+
+.footnote[
+1 Threads are covered in Chapter 4.
+]
+
+
+In this chapter we discuss  .greenbold[process scheduling].
 
 
 ---
@@ -746,8 +773,8 @@ the decision about which memory resident process gets the CPU next.
 Long-term scheduling is used in batch systems to decide the order in which various
 jobs should be  executed. We will not discuss it here.
 
-Medium-term and short-term scheduling are relevant to interactive computer systems
-and we focus our attention on these.
+Medium-term and short-term scheduling are relevant to interactive computer 
+systems and we focus our attention on these.
 
 
 ---
@@ -768,7 +795,8 @@ The number of processes currently in memory is called the .bluebold[degree of mu
 
 --
 
-Some processes are .redbold[highly interactive] - they run briefly and immediately issue I/O requests.
+Some processes .redbold[make heavy use of I/O devices] - 
+they run briefly and immediately issue I/O requests.
 They are called .bluebold[I/O-bound] processes.
 
 Others are very .redbold[compute-intensive] - they spend  little time making I/O requests,
@@ -786,9 +814,9 @@ name: medium-term-scheduler-2
 ### The Swapper
 
 In interactive computer systems, where users use shells to issue
-commands and run applications and other programs, processes are automatically loaded
-into memory, so there is no explicit scheduler that .redbold[puts] processes
-into memory.
+commands and run applications and other programs, processes are 
+automatically loaded into memory, so there is no explicit scheduler 
+that .redbold[puts] processes into memory.
 
 --
 
@@ -829,16 +857,16 @@ control blocks.
 
 .redbold[The CPU scheduler selects processes from the ready queue to run on an available CPU.]
 
-In an interactive system, the CPU scheduler runs very frequently, because it cannot
-let any process run for too long, otherwise the response times for the remaining  processes
-would be unacceptably long.
+In an interactive system, the CPU scheduler runs very frequently, because it 
+cannot let any process run for too long, otherwise the response times for 
+the remaining  processes would be unacceptably long.
 
 Because it runs so frequently, it must be extremely fast, otherwise the overhead of
 scheduling decreases CPU utilization, decreases throughput, and increases response times.
 
 --
 
-Process scheduling is explored in detail in Chapter 5.
+CPU scheduling is explored in detail in Chapter 5.
 
 ---
 name: process-queues
@@ -870,8 +898,8 @@ A queuing diagram for our simple system is below.
 name: context-switch
 ### Context Switch
 
-When an interrupt occurs, the currently running process must be removed from the CPU
-and a kernel routine run. .redbold[How does this happen?]
+Events occur that require that the currently running process be removed
+from the CPU and another one run.  .redbold[How does this happen?]
 
 --
 
@@ -884,10 +912,11 @@ values of all registers, the process state, and memory-management information.
 
 --
 
-Changing the state of the CPU from one context to another is called a .bluebold[context switch].
+Changing the state of the CPU from one context (i.e., process) to another
+is called a .bluebold[context switch].
 It consists of two steps: .bluebold[save the old context] and .bluebold[load the new context].
 
-- In general, the context of an interrupted process is stored in its PCB. When it runs
+- In general, the context of a process is saved in its PCB. When it runs
 again, it is used to restore the process to its previous state.
 
 - Context switching time varies from machine to machine. It depends on memory speed,
@@ -896,6 +925,62 @@ In general it is costly.
 
 - To reduce the overhead of it, some systems keep multiple sets of registers for each CPU
 so that the old process context does not need to be saved.
+
+---
+name: exceptions-revisited
+### Exceptions and Interrupts Revisited
+
+Now that you understand what a process is, the distinction between
+exceptions and interrupts should be clarified.
+
+When a .greenbold[process causes an exception], and the kernel runs,
+.redbold[it is still running on behalf of that process]. There is no context switch.
+The only change is that the .redbold[hardware context] is changed:
+
+- the mode is switched to kernel mode,
+- the registers are saved, kernel code runs,
+- registers are restored,
+- the mode is switched to user mode.
+
+While the kernel code is being executed, it is still associated with the process
+that caused it to run.
+
+When an .greenbold[interrupt occurs], it is different. It is not the result of the current process's
+having done something.
+ - It might be that data is ready for some other process, or that the
+process's time quantum expired and a new process must be run.
+
+- This might cause a context switch.  Whether it does or does not depends on the
+type of interrupt and how the particular operating system handles the interrupt.
+
+---
+name: mode-changes
+### Interrupts, System Calls, and Context Switches
+
+It can be confusing to sort out the differences between
+interrupt handling, system call handling, and the role of context switches in
+all of these.
+The figure below shows how they differ in a system such as Linux.super[1].
+.footnote[
+1 It is somewhat more complicated than this - there are more cases to consider.
+]
+.center[
+<img src="figures/user-kernel-transitions.png" width=90%  alt="User to Kernel Mode">
+]
+
+
+.smaller[
+- A system call .redbold[that does not invoke the CPU scheduler] executes in the
+same context as the process; there is no context switch.
+
+- A timer interrupt .redbold[causes the CPU scheduler to run] in the
+same context as the process; the scheduler may choose a new process; this is a context
+switch.
+
+- An interrupt from a device .redbold[causes the interrupt handler to run]; if it needs to
+call the scheduler, there is a context switch, otherwise there is not.
+]
+
 
 ---
 name: process-operations
@@ -1166,7 +1251,7 @@ The .fixedblue[fork()]  call has a large amount of overhead:
 - it must .redbold[allocate new memory] for the new process and copy the address space of
 the caller into the newly allocated memory;
 
-- it must redbold[copy other resources as well], that are not in that address space, such
+- it must .redbold[copy other resources as well], that are not in that address space, such
 as various kernel resources required by the first process (queues, signal information,
 etc.)
 
@@ -1666,7 +1751,7 @@ separate links for messages from .fixedblue[P] to .fixedblue[Q] and from .fixedb
 
 --
 
-- Is communication greenbold[synchronous] or greenbold[asynchronous]?
+- Is communication .greenbold[synchronous] or .greenbold[asynchronous]?
 
 --
 
@@ -1745,7 +1830,7 @@ any instructions because it is waiting for an event to take place.
 
 For example, when a C++ program executes a statement such as
 ```C++
-cin << x;
+cin >> x;
 ```
 <!-- -->
 it is blocked until the input is available.
@@ -1775,7 +1860,7 @@ of communication.
 name: message-passing-asynch
 ### Asynchronous Operations
 
-Operations that are not blocking are called is .bluebold[non-blocking] operations.
+Operations that are not blocking are called  .bluebold[non-blocking] operations.
 
 --
 
@@ -2084,7 +2169,7 @@ known as the .bluebold[Producer-Consumer Problem].
 name: prod-cons-2
 ### Producer Consumer Examples
 
-The producer-consumer problem models many activities that occur in a compter system,
+The producer-consumer problem models many activities that occur in a computer system,
 and in particular, within the operating system.
 
 --
@@ -2113,7 +2198,7 @@ name: shared-mem-prod-consumer
 
 - We assume the following shared data and global initializations:
   ```C
-    \#define BUFFER_SIZE 10
+    #define BUFFER_SIZE 10
     typedef struct {
         /* actual data declarations would be here */
     } item;
@@ -2253,7 +2338,7 @@ the library takes care of it.
 
 The solution that we show in the next slide assumes that:
 - there is a message-passing library with two operations, .fixedblue[send()] and .fixedblue[receive()],
-- that the producer and consumer processes are the only processes in the "communicator"
+- the producer and consumer processes are the only processes in the "communicator"
 system so that they can exchange messages, and that
 - .fixedblue[send()] requires no destination process because
 all processes other than the sender receive the message, and

@@ -71,13 +71,12 @@ name:toc
 ---
 ### Table of Contents
 
-[Multi-threading Models](#multi-threading-models)<br>
+[Multi-threading Models](#multithreading-models)<br>
 [Thread Implementations](#thread-types)<br>
 [User Level Threads](#user-threads-1)<br>
 [A POSIX Threads Example](#pthreads-example-1)<br>
 [Some Explanation](#pthreads-2)<br>
-[Fork-Join Parallelism](#fork-join-1)<br>
-[Fork-Join in Pthreads](#fork-join-2)<br>
+[Fork-Join Flow](#fork-join-2)<br>
 [User Level Threads: Pros](#user-threads-pros)<br>
 [User Level Threads: Cons](#user-threads-cons)<br>
 [Kernel Level Threads](#kernel-level-threads-1)<br>
@@ -94,11 +93,38 @@ name:toc
 [One-to-One (1:1) Threading Model Pros and Cons](#one-to-one-2)<br>
 [Many-to-Many (M:N) Threading Model](#many-to-many)<br>
 [Many-to-Many (M:N) Threading Model Pros and Cons](#many-to-many-2)<br>
+[Two-Level Threading Model](#two-level)<br>
 ---
 ### Table of Contents
 
+[Scheduler Activations](#scheduler-activations)<br>
+[Scheduler Activation Use](#scheduler-activations-2)<br>
 [Implicit Threading](#implicit-threading-intro)<br>
-[Threading Issues](#thread-issues)<br>
+[Parallelizing Compilers](#parallelizing-compilers)<br>
+[Types of Implicit Threading](#implicit-thread-types)<br>
+[Underlying Technology](#technologies)<br>
+[Thread Pools](#thread-pools)<br>
+[The Fork-Join Model](#fork-join-1)<br>
+[Fork-Join Parallelism](#fork-join-2)<br>
+[OpenMP Overview](#openmp-intro)<br>
+[OpenMP Key Features](#openmp-features-1)<br>
+[OpenMP Run-time Routines](#openmp-features-2)<br>
+[OpenMP Example Program](#openmp-example)<br>
+[Grand Central Dispatch](#grand-central-dispatch)<br>
+[Example of a GCD Program](#gcd-example)<br>
+[Issues with .fixedblue[fork()]](#fork-issues)<br>
+[Issues with the .fixedblue[exec()] Family](#exec-issues)<br>
+[Signals](#signals)<br>
+[Signal Handling](#signal-handling)<br>
+[Signals and Threads: Issues](#signal-handling-questions)<br>
+[Signals and Threads: Solutions](#signal-handling-threads)<br>
+[Thread Cancellation](#thread-cancellation)<br>
+[Thread Cancelability](#thread-cancellation-issues)<br>
+---
+### Table of Contents
+
+[Thread Cancelability Control](#thread-cancelability)<br>
+[Thread Cancellation Points](#thread-cancellation-points)<br>
 [References](#references)<br>
 <!--TOC_END-->
 
@@ -150,7 +176,7 @@ called .greenbold[threads].
 Multiple threads of a process can run .redbold[in parallel] and can therefore
 speed up a computation, taking advantage of the multiple processors that
 exist in almost all modern computers.
-To the right is a graph of two threads of a multi-threaded program.
+To the right is a graph of two threads of a multithreaded program.
 ]
 .right-column[
 <img src="figures/thread-paths-2.png" width=100% alt="parallel threads">
@@ -160,7 +186,7 @@ To the right is a graph of two threads of a multi-threaded program.
 
 .below-column[
 Some programs can have hundreds or even thousands of threads.
-.redbold[Modern operating system kernels are always multi-threaded.]
+.redbold[Modern operating system kernels are always multithreaded.]
 ]
 
 ---
@@ -194,7 +220,7 @@ threads and processes;
 
 --
 
-- describe the advantages and disadvantages of designing multi-threaded
+- describe the advantages and disadvantages of designing multithreaded
 programs as compared to single-threaded programs;
 
 --
@@ -203,7 +229,7 @@ programs as compared to single-threaded programs;
 
 --
 
-- describe various multi-threading models, explain how they differ, and
+- describe various multithreading models, explain how they differ, and
 identify the strengths and weaknesses of each model;
 
 --
@@ -225,7 +251,7 @@ the .greenbold[fork-join model], and .greenbold[OpenMP];
 
 --
 
-- read and understand simple multi-threaded programs that use the Linux threading API.
+- read and understand simple multithreaded programs that use the Linux threading API.
 
 ---
 name: more-motivation
@@ -235,11 +261,11 @@ name: more-motivation
 
 --
 
-- Modern kernels are multi-threaded. Understanding them requires understanding threads.
+- Modern kernels are multithreaded. Understanding them requires understanding threads.
 
 --
 
-- Most modern applications are multi-threaded. Examples:
+- Most modern applications are multithreaded. Examples:
 
  - A web browser process  might have one thread to render images and text
 and another to download data.
@@ -253,7 +279,7 @@ chess board, and another analyzing future moves, while the user is thinking.
 
 - Creating processes is much more time-consuming than creating threads.
 
-- Processes use many resources than threads overall.
+- Processes use many more resources than threads overall.
 
 --
 
@@ -262,7 +288,7 @@ that share resources .redbold[can] be easier.
 
 --
 
-- .redbold[But multi-threading a program is difficult and dangerous and requires great understanding.]
+- .redbold[But multithreading a program is difficult and dangerous and requires great understanding.]
 .redbold[Hence it is important to understand how to use threads.]
 
 ---
@@ -327,7 +353,7 @@ All threads .redbold[share] many process resources, but the most important are:
 name: thread-visualization
 ### Single- and Multi-Threaded Processes
 
-We can visualize single-threaded and multi-threaded processes as shown below:
+We can visualize single-threaded and multithreaded processes as shown below:
 .left-column[
 .center[ Single-threaded Process]
 <img src="figures/single-threaded.png" width=90% alt="single-threaded process">
@@ -335,12 +361,12 @@ We can visualize single-threaded and multi-threaded processes as shown below:
 
 .right-column[
 .center[ Multi-threaded Process]
-<img src="figures/multithreaded.png" width=90% alt="multi-threaded process">
+<img src="figures/multithreaded.png" width=90% alt="multithreaded process">
 ]
 
 --
 .below-column[
-Notice that, in the multi-threaded process to the right,  each thread's
+Notice that, in the multithreaded process to the right,  each thread's
 stack, registers, and program counter are no longer process resources, but
 .redbold[thread-private] resources.
 ]
@@ -350,7 +376,7 @@ name: thread-symbol
 ### Visualizing Threads
 
 .left-column-large[
-In the preceding illustration of a multi-threaded process, there were four threads,
+In the preceding illustration of a multithreaded process, there were four threads,
 each of which was represented by the abstract figure to the right.
 In this figure, the curved line represents the thread of control through the
 set of instructions executed by the thread.
@@ -397,7 +423,7 @@ to exit the  command, type ".fixedblue[q]".) The last field on the line is the
 command that was executed to create the process (or thread).
 
 The 6.super[th] field (with heading .fixedblue[NLWP]) is the number of threads that the given process has.
-A process with the value 1 in this column has one thread and is thus not multi-threaded.
+A process with the value 1 in this column has one thread and is thus not multithreaded.
 
 Which process has the most threads? What is the command that created it?
 
@@ -594,7 +620,7 @@ name: parallelism-visualized
 ### Visual Comparison
 
 .left-column[
-A common source of data parallelism exists in linear arrays of sata that need to be
+A common source of data parallelism exists in linear arrays of data that need to be
 sorted. Certain sorting algorithms are more amenable than others to decomposition into subtasks
 that act on segments of the array. The diagram below depicts a variation of a parallel mergesort
 algorithm.
@@ -632,7 +658,7 @@ memory stalls.  But let's pretend for now that this is not an issue.
 --
 
 The parallel program obviously takes about 1/1024.super[th] the time that the sequential program takes,
-or that it runs 1024 times faster. This leads to a definition.
+or it runs 1024 times faster. This leads to a definition.
 
 --
 
@@ -765,6 +791,29 @@ Plot by Daniels220 at English Wikipedia, CC BY-SA 3.0, https://commons.wikimedia
 ]
 
 ---
+name: amdahl-activity
+count: false
+class: breakout
+###  Inverting Amdahl's Law
+
+Suppose that $f$ is the  serial fraction of operations in a given program.
+The maximum possible speedup is $\frac{1}{f}$.
+
+Suppose we want to achieve a specific speedup $S$ less than $\frac{1}{f}$.
+
+How many processors are needed?
+
+1. Use the formula for speedup to write $N$ as a function of $f$ and $S$.
+
+2. For $f=0.1$, find the least number of processors needed to obtain a speedup of
+$5$.
+
+3. What if we want a  speedup of $8$?
+
+
+
+
+---
 name: multithreading
 layout: false
 class: center, middle, inverse
@@ -776,7 +825,7 @@ template: tinted-slide
 layout: true
 
 ---
-name: multi-threading-models
+name: multithreading-models
 ### Multi-threading Models
 
 Ultimately the goal is to be able to write programs that create threads and manipulate them.
@@ -803,7 +852,7 @@ what the various options are and what limitations each has.
 --
 
 We are about to explore two different methods by which computer systems
-allow programmers to create multi-threaded programs. They are called .bluebold[multi-threading models].
+allow programmers to create multithreaded programs. They are called .bluebold[multithreading models].
 
 .redbold[The difference between the methods is that, in one,
 threads are implemented in user space, and in the other,
@@ -823,6 +872,9 @@ The thread library contains code for creating and destroying threads,
 for inter-thread communication, scheduling,  saving and restoring thread contexts, and all
 other thread management operations.
 
+The three most commonly used thread libraries are .fixedblue[POSIX Threads],
+.fixedblue[Windows Threads], and .fixedblue[Java Threads].
+
 --
 
 .bluebold[Kernel level threads] are managed entirely within the kernel.
@@ -831,7 +883,7 @@ Creating, destroying, scheduling, coordinating, and otherwise managing threads
 is performed completely within kernel code.
 A kernel level thread is sometimes
 called a .bluebold[light weight process] (.bluebold[LWP]).
-Almost all modern operating systems support kernel threads.
+Almost all modern operating systems support kernel level threads.
 
 --
 
@@ -852,15 +904,16 @@ In the figure below, there are two processes,  one with 4 user threads, the othe
 
 The thread support is handled within the library entirely, in user space.
 Notice that there are no threads depicted in the kernel in this figure.
-With user level threads, it is possible to have a multi-threaded program in an operating system that
+With user level threads, it is possible to have a multithreaded program in an operating system that
 may or may not have kernel support for threading. It is independent of kernel support.
+
 
 ---
 name: pthreads-example-1
 ### A POSIX Threads Example
 
 One of the most common user thread libraries is the one standardized by .greenbold[POSIX],
-which  specifies  an API for multi-threaded programs
+which  specifies  an API for multithreaded programs
 commonly known as .bluebold[POSIX threads] or  .bluebold[Pthreads].
 This interface is implemented in almost all modern operating systems.
 
@@ -908,67 +961,54 @@ child thread makes a call to .fixedblue[pthread_exit()].
 
 --
 
-One important point about these functions is that the library implements them
+An important point about these functions is that the library implements them
 by making calls to the underlying operating system thread support system, if it exists.
 If not, it simulates the operations within the process. This will be explained more later.
 
---
-
-A second important point is that these three calls are .greenbold[fundamental]
-to the parallel programming paradigm used by  thread libraries such as Pthreads.
-They are the basis of a type of parallel programming called .redbold[fork-join parallelism].
-
----
-name: fork-join-1
-### Fork-Join Parallelism
-
-.bluebold[Fork-join parallelism] is a parallel programming paradigm that applies to
-threads as well as to processes. We will use the Linux term "task" to refer to both.
-
-In fork-join parallelism, the idea is that when a task creates a new, parallel task,
-it has .bluebold[forked] that task. The two tasks run concurrently. The parent task
-.fixedblue[waits] for the child task to terminate in a type of function called a .bluebold[join].
-In Pthreads, the .fixedblue[pthread_join()] function does this. In Unix, the .fixedblue[wait()]
-function serves the same purpose.
-
-Suppose that various parallel tasks have been identified in a main program as follows:
-
-.center[
-<img src="figures/fork-join-1.png" width=50% alt="fork-join parallelism">
-]
-
-A multi-threaded program following the fork-join model can be represented by the graph:
-
-.center[
-<img src="figures/fork-join-2.png" width=80% alt="fork-join parallelism">
-]
-
-.footnote[
-Images from Wikipedia user A1 / CC BY (https://creativecommons.org/licenses/by/3.0)
-]
 ---
 name: fork-join-2
-### Fork-Join in Pthreads
+### Fork-Join Flow
 
-The depiction in the preceding slide does not characterize the type of fork-join
-used by a library such as Pthreads.
+The parallel flow when .fixedblue[pthread_fork()] and .fixedblue[pthread_join()]
+are used is illustrated by the diagram below.
 
-Pthreads does not provide a function to fork multiple threads simultaneously as is shown
-in that figure.
+.center[
+<img src="figures/fork-join-simple.png" width=80% alt="fork-join diagram">
+]
+--
 
-Instead, .fixedblue[pthread_create()] must be called to fork one new thread at a time.
+Notice that, after the .fixedblue[join()] call, only the parent thread continues.
+In this paradigm,  a thread creates a child thread and waits for it to finish,
+after which only the parent thread continues.
 
-To create the thread parallelism in which tasks A, B, C, and D execute concurrently,
-.fixedblue[pthread_create()] must be called three times, as shown below, and joined that many
-as well, calling .fixedblue[pthread_join()].  In the figure the edges represent the threads
-executing the operations that label them.
+When multiple threads need to be created, the flow looks something like the diagram below.
+There is no way to create more than one thread at a time.
 
 .center[
 <img src="figures/pthread-fork-join.png" width=100% alt="fork-join parallelism">
 ]
 
-The fork creates a new thread. The edges are labeled by the functions that the threads
-would execute.
+--
+
+The  fork-join paradigm is fundamental to how multithreading is achieved in  thread libraries
+such as Pthreads.
+It also underlies a type of threading model known as .redbold[fork-join parallelism]
+which we will discuss later in this chapter.
+
+---
+name: pthread-activity
+count: false
+class: breakout
+###  Pthread Activity
+
+The Pthreads program from the [Example slide](#pthreads-example-1) can be found
+on the network in the .fixedblue[demos] directory. Copy it to your own directory and
+modify it so that it creates two threads. The second thread will print "Goodbye".
+
+The main program should be designed so that the first thread to print will be the one
+that prints "Hello World". Look up the .fixedblue[sleep()] function.
+
+The main program should wait for each child thread to terminate.
 
 
 ---
@@ -988,7 +1028,7 @@ required (because all threads are in user space.)
 --
 
 - The kernel does not need to have any support for threads for user programs to be
-multi-threaded. All threads run in the process's context.
+multithreaded. All threads run in the process's context.
 
 --
 
@@ -1037,7 +1077,7 @@ name: kernel-level-threads-2
 
 The term "kernel level threads" refers to a method by which all applications
 and programs, whether user level or system level,
-to be multi-threaded by using threads supported directly by the kernel.
+can be multithreaded by using threads supported directly by the kernel.
 
 --
 
@@ -1045,13 +1085,13 @@ To make this possible, it requires that
 
 - the kernel itself can create and manage threads, and
 
-- although the threads in the multi-threaded program are created and managed
+- although the threads in the multithreaded program are created and managed
 by the kernel, they are part of the program and have its privileges and share
 its address space by default.
 
 --
 
-.redbold[Kernels that can create threads are usually multi-threaded themselves, because
+.redbold[Kernels that can create threads are usually multithreaded themselves, because
 they create threads to improve their own performance.]
 
 This gives rise to a natural confusion in the terminology:
@@ -1196,7 +1236,7 @@ programs that can block frequently for short durations.
 - The kernel can allocate more processor time to processes with larger numbers of
 threads.
 
-- The kernel itself can be multi-threaded.
+- The kernel itself can be multithreaded.
 
 --
 
@@ -1242,7 +1282,7 @@ name: many-to-one
 
 This method is rarely used anymore and is mostly of historical interest.super[1].
 It was used originally because it requires no support for
-multi-threading at the kernel level and is the most portable,
+multithreading at the kernel level and is the most portable,
 but it has significant performance problems.
 
 .footnote[
@@ -1252,8 +1292,16 @@ but it has significant performance problems.
 All threads are implemented in user space within the process,
 which appears to the kernel to be an ordinary, single-threaded process.
 
-.center[
-<img src="figures/many-2-one.png" width=65% alt="many-to-one model">
+.left-column-small[
+In the figure to the right, we draw the process threads on which the
+user-level threads run, inside the kernel space. This does not mean that
+the process executes kernel code. It means
+that the data structures that represent the process are in kernel space.
+
+
+]
+.right-column-large[
+<img src="figures/many-2-one.png" width=90% alt="many-to-one model">
 ]
 ---
 name: many-to-one-2
@@ -1290,14 +1338,19 @@ name: one-to-one
 The .bluebold[One-to-One model] assigns a kernel level thread to each user level thread.
 Implementations of .fixedblue[Pthreads] in current Linux versions and  __Windows__ systems use this approach.
 
-.center[
-<img src="figures/one-2-one.png" width=65% alt="one-to-one model">
+.left-column-small[
+From now on, kernel level threads are drawn in kernel space to
+indicate that the data structures and code that represent and manage them is in
+kernel space.
 ]
-
+.right-column-large[
+<img src="figures/one-2-one.png" width=90% alt="one-to-one model">
+]
+.below-column[
 In the figure above, each user level thread is associated with a real kernel level thread.
 In Linux, this simply means that the library uses the .fixedblue[clone()] system call
 to create the threads. .redbold[Each thread is seen by the kernel as a separately schedulable entity.]
-
+]
 ---
 name: one-to-one-2
 ### One-to-One (1:1) Threading Model Pros and Cons
@@ -1344,7 +1397,7 @@ necessary to service the user level threads that are ready to run.
 name: many-to-many-2
 ### Many-to-Many (M:N) Threading Model Pros and Cons
 
-This model has several  .redbold[benefits]. The most signifcant include:
+This model has several  .redbold[benefits]. The most significant include:
 
 -  It does not use kernel resources for user level threads
 that are not actually runnable.
@@ -1355,21 +1408,116 @@ switch between threads much faster because it does not make system calls.
 - It performs better than the others when user level threads synchronize with each other.
 
 - Applications that create large numbers of threads that only run
-occassionally perform better on this model than in the others.
+occasionally perform better on this model than in the others.
 
+--
 
-The .redbold[drawback] of this model is that
-it has more overhead and consumes more system resources
-because scheduling taks place in both the kernel among the kernel level
+The .redbold[drawbacks] of this model include:
+
+- It has more overhead and consumes more system resources
+because scheduling takes place in both the kernel among the kernel level
 threads for the process and in the library for the user level threads.
+
+- User level threads that are bound to the same kernel level thread can still be
+blocked when the thread that is running makes a blocking system call.
+
+---
+name: two-level
+### Two-Level Threading Model
+
+The two-level model is similar to the M:N model
+except that it also allows some user-level threads to be bound to a
+single kernel-level thread. This is useful when certain threads should not be
+prevented from running because a thread that is sharing its kernel level thread blocks.
+
+.center[
+<img src="figures/two-level.png" width=65% alt="two level model">
+]
+
+---
+name: scheduler-activations
+### Scheduler Activations
+
+In the M:N and two-level models, when an underlying kernel level
+thread blocks, there is no way for the kernel to notify the user level thread manager that
+the thread has blocked, so that it can allocate more kernel level threads.
+
+--
+
+In 1991, a model called .bluebold[scheduler activations].super[1]
+ was proposed to overcome this problem.
+
+.footnote[
+1 Thomas E. Anderson, Brian N. Bershad, Edward D. Lazowska, and Henry M. Levy.
+"Scheduler activations: Effective kernel support for the user-level management of parallelism."
+_Proc. 19th ACM Symposium on Operating System Principles_, pp. 95-109, 1991.
+]
+.left-column[
+In this model, the kernel provides the process with the abstraction of
+.bluebold[virtual processors]. To a user process, a virtual processor acts like an
+actual processor on which a user level thread can run.
+It is however just a data structure, sometimes called a .bluebold[Light Weight Process] (.bluebold[LWP]).
+
+Each LWP is bound to a kernel level thread. The kernel level thread is scheduled to
+run on an available processor.
+If it blocks, the LWP blocks, and the user level thread attached
+to the LWP blocks.
+]
+
+.right-column[
+<img src="figures/scheduler-activation.png" width=70% alt="LWP">
+]
+
+---
+name: scheduler-activations-2
+### Scheduler Activation Use
+
+Kernel events that could affect the number of runnable threads, such as blocking system calls,
+are communicated directly to the user process using .bluebold[upcalls], which are messages
+sent to the user level thread manager.
+
+Upcalls are handled within the thread manager by an .bluebold[upcall handler]
+(which is like a signal handler). The upcall handlers must run on a virtual processor.
+
+#### .bluebold[Example Sequence]
+
+--
+
+1. An executing thread makes a blocking system call.
+
+--
+
+2. The kernel blocks the calling user level thread as well as the kernel level thread
+used to execute the user level thread.
+
+--
+
+3. .redbold[Scheduler activation]: The kernel allocates a new virtual processor  to the process.
+
+--
+
+4. .redbold[Upcall]: The kernel notifies the user level thread manager that the  user level thread
+blocked and that a new virtual processor is available for other threads.
+
+--
+
+5.  The user process runs an upcall handler on the new virtual processor.
+It saves the state of the blocked thread and frees the
+virtual processor on which that thread was running.
+
+--
+
+6. The user level thread manager moves the other threads to the new virtual processor
+and schedules one of the ready threads to run on it.
 
 ---
 name: implicit-threading
 layout: false
 class: center, middle, inverse
 ## Implicit Threading
-This section explores how threads can be created implicitly, with little
-programmer coding.
+In this section we examine ways in which multithreaded programs can be
+generated from single-threaded programs  with varying amounts of
+programmer direction.
 
 ---
 template: tinted-slide
@@ -1380,36 +1528,804 @@ name: implicit-threading-intro
 ### Implicit Threading
 
 It is difficult for programmers to write concurrent programs in general, and writing
-multi-threaded programs is among the hardest of tasks. Handling synchronization,
-preventing various types of .greenbold[race conditions],
+multithreaded programs is among the hardest of tasks. Some of the reasons are:
+
+--
+
+- Identifying the parallelism in a problem is difficult and there is no algorithm
+that can do this in general.
+
+--
+
+- Defining the individual tasks, determining how to distribute data to them, and
+mapping them to processors and load balancing for optimal performance are
+difficult and there are no algorithms that can do these things in all cases.
+
+--
+
+- Handling coordination and communication among threads is error-prone.
+
+--
+
+One way  to overcome these difficulties is to
+.redbold[offload some of the programming tasks from developers to compilers and run-time libraries.]
+
+--
+
+.bluebold[Implicit threading] refers to any of several different methods of multithreading
+a program in which compilers and/or libraries create and manage concurrent threads with little or no
+explicit guidance from the programmer.
+.redbold[The "implicit" aspect of it is the creation and management
+of threads, not the specification of parallelism.]
+
+---
+name: parallelizing-compilers
+### Parallelizing Compilers
+
+
+Much research has been put into the design of compilers that
+.redbold[free programmers completely] from the tasks of multithreading programs.
+
+For example, it is possible for a compiler to detect that,
+in a sequential loop such as this:
+
+```C
+for ( int i = 0; i < 100; i++)
+    a[i] = b[i] + c[i];
+```
+<!-- sample code -->
+the loop body can be executed in parallel by up to 100 different threads simultaneously.super[1].
+
+These .bluebold[parallelizing compilers] analyze the code and determine automatically where
+.greenbold[fine-grained parallelism].super[2] exists.
+They can then arrange for selected instructions to be executed by separate threads.
+
+.footnote[
+1 There are still bottlenecks with respect to accessing to the shared memory.<br>
+2 Fine-grained parallelism is parallelism in which the parallel tasks are just a few
+instructions long. When the tasks are entire functions, it is considered to be
+.bluebold[coarse-grained].
+]
+
+--
+
+Studies have shown that 90% of the execution time of most programs is spent in
+10% of the code, mostly in loops.
+Therefore, much of the effort is in detecting the parallelism in loops.
+Unfortunately there are many difficulties with this, particularly
+in the presence of pointers and recursion.
+
+Some .fixedblue[C++] and .fixedblue[Fortran] compilers are parallelizing compilers.
+
+---
+name: implicit-thread-types
+### Types of Implicit Threading
+
+.redbold[Greater success is achieved when the programmer can assist the compiler in detecting parallelism.]
+
+Implicit threading systems typically require some guidance from the programmer.
+Usually the programmer must identify tasks that can be executed in
+parallel. Often these tasks are either functions or structured code blocks,
+like the body of a loop.
+
+Some well-known implicit threading systems include:
+
+--
+
+- .bluebold[OpenMP]
+(short for Open Multi-Processing) is an API for programs written in
+.fixedblue[C/C++] and .fixedblue[FORTRAN]
+that may be used to explicitly specify multithreaded, shared-memory parallelism.
+It includes compiler directives, runtime library routines, and environment variables.
+
+--
+
+- .bluebold[Grand Central Dispatch]
+(GCD) is a technology developed by Apple for its
+macOS and iOS operating systems. Like OpenMP,
+it includes a run-time library, an API, and language extensions
+that allow developers to identify sections of code  to run in parallel.
+
+--
+
+- .bluebold[Intel Threading Building Blocks]
+(TBB) is a template library that supports
+the design of multithreaded, shared-memory  programs in.fixedblue[C++].
+
+--
+
+- .bluebold[Java Concurrency]
+refers to the multithreading, concurrency and parallelism
+available from  the .fixedblue[Java Virtul Machine], which is entirely thread-based.
+.fixedblue[java.util.concurrent] is the class that provides this concurrency.
+
+
+---
+name: technologies
+### Underlying Technology
+
+Consider a multithreaded web server.
+When the server receives a request, it creates a separate thread to service the request.
+
+--
+
+When the request has been serviced, the thread is deleted.
+
+--
+
+There are two problems with this:
+
+- Threads are constantly being created and destroyed.
+
+- There is no bound on how many threads can exist at any time.
+
+--
+
+The first problem leads to poor CPU utilization and wasted memory resources.
+The second could lead to system degradation.
+
+--
+
+To solve this, rather than constantly creating and deleting threads, the implementation
+can maintain a pool of threads, like a collection of workers sitting in a room waiting
+to be assigned work to do. When work comes in, the .greenbold[worker thread] is assigned to it.
+When it finishes, it goes back to the waiting room.
+
+---
+name: thread-pools
+### Thread Pools
+
+Many implementations of implicit threading systems use these .greenbold[thread pools]
+to improve their performance.super[1]. The general idea of thread pools is as follows.
+
+.footnote[
+1 Thread pools are used by .fixedblue[Java],  .fixedblue[OpenMP], and  .fixedblue[Grand Central Dispatch].
+]
+--
+
+- A thread pool is initialized with a number of threads,
+where they wait for work.
+
+--
+
+- When a process needs a new thread to perform a task, it requests one
+from the thread pool.
+
+--
+
+- If there is an available thread in the pool, it is awakened and assigned to
+the process to execute the task.
+
+- If the pool contains no available threads,
+the task is queued until one becomes free.
+
+--
+
+- Once a thread is available, it returns to the pool and awaits more work.
+
+--
+
+#### Benefits
+- Servicing a request with an existing thread is faster than creating a thread.
+
+- A thread pool limits the number of threads that exist at any one point.
+
+- Separating the task to be performed from the mechanics of creating the task
+means different strategies can be used for running and scheduling the task.
+
+
+---
+name: fork-join-1
+### The Fork-Join Model
+
+Implicit threading systems often use a paradigm for thread creation and management
+known as the .greenbold[fork-join model].
+
+--
+
+The .bluebold[fork–join model], also known as .bluebold[fork-join parallelism],
+is like the explicit thread creation that we saw earlier in the Pthreads library
+in that threads are created by a parent thread, and their executions reach a join point
+after which only one thread continues.
+
+Unlike Pthreads, the model does not limit the creation of threads to just one thread at a time.
+
+--
+
+The example we give is based on the following figure from the Wikipedia article
+about the fork-join model.super[1].
+
+
+.footnote[
+1 https://en.wikipedia.org/wiki/Fork%E2%80%93join_model#/media/File:Fork_join.svg
+]
+
+.center[
+<img src="figures/fork-join-1.png" width=50% alt="fork-join parallelism">
+]
+
+In the figure above, a sequential program has been analyzed, and it is determined that
+the program has three regions that must be executed sequentially, but that within
+each region there are varying numbers of parallel tasks, randomly colored and
+labelled A,B,C, and D.
+
+---
+name: fork-join-2
+### Fork-Join Parallelism
+
+A multithreaded program following the fork-join model can be created based on this analysis.
+The flow through it would be represented by the diagram below.
+
+.center[
+<img src="figures/fork-join-2.png" width=80% alt="fork-join parallelism">
+]
+
+In the above figure we see that the master thread (always .greenbold[green]) forks two new threads and continues to
+run, so that there are three threads. They join, the master thread executes alone and then forks
+three threads. The threads join, master runs again and finally just forks one thread and runs with it.
+After they join, the master thread continues on its own.
+
+
+
+.footnote[
+1 https://en.wikipedia.org/wiki/Fork%E2%80%93join_model#/media/File:Fork_join.svg
+]
+
+This model is used in the implicit threading library employed by Java. It is also
+the paradigm defined in OpenMP.
+
+---
+name: openmp-intro
+### OpenMP Overview
+
+.bluebold[OpenMP] was jointly defined by a group of major computer hardware
+and software vendors. It is an open API for programs written in
+.fixedblue[C/C++] and .fixedblue[FORTRAN] and
+is portable, scalable, and provides support on a wide variety of architectures.
+
+--
+
+Because it is an open API, it has implementations on many platforms, many of which
+are open source, such as all of those provided by .fixedblue[GNU]
+under the GNU Public License 3.0.
+
+--
+
+- OpenMP is designed for multiprocessor/core, shared memory machines.
+The underlying architecture can be either UMA or NUMA.
+
+--
+
+- It has three primary API components:
+
+  - .redbold[Compiler directives], used by programmers to define .greenbold[parallel regions]
+  - .redbold[Runtime library routines], which extend the language with OpenMP functions
+  - .redbold[Environment variables], used to control the behavior of OpenMP programs
+
+--
+
+- The parallelism in OpenMP programs is exclusively through the use of threads.
+Most implementations (such as .fixedblue[GNU]) use thread pools to manage the threads.
+
+- OpenMP uses the .greenbold[fork-join] model of parallel execution.
+An OpenMP program begins as a single thread called the .bluebold[master thread].
+The master thread executes sequentially until the first parallel region is encountered.
+
+
+---
+name: openmp-features-1
+### OpenMP Key Features
+
+- OpenMP defines .greenbold[parallel regions] as blocks of code that may run
+in parallel.
+
+- Programmers insert compiler directives into their code at parallel regions;
+these directives instruct the OpenMP run-time library to execute the region in parallel.
+
+--
+
+- Parallel regions are specified using compiler directives, known as .greenbold[pragmas].
+For example, a simple directive is
+```C
+#pragma omp parallel
+```
+which specifies that the following statement is to be executed by some number of threads
+in parallel.
+
+- Because OpenMP is a shared memory programming model, most data within a parallel region is shared by default.
+It can also be made explicit:
+```C
+// declare a and i before
+#pragma omp parallel shared(a) private(i)
+```
+is a .fixedblue[C/C++] pragma that specifies the start of a parallel region with a
+variable .fixedblue[a] shared by all threads and a thread-private variable named
+.fixedblue[i]  of which each thread has a private copy.
+
+---
+name: openmp-features-2
+### OpenMP Run-time Routines
+
+OpenMP has a rich set of compiler directives for specifying parallel for-loops, critical sections
+of code, nested parallel regions, and much more.
+
+The run-time library has routines for such things as
+
+-  Setting and querying the number of threads
+
+-  Querying a thread's unique identifier (thread ID)
+
+-  Querying if execution is within a parallel region, and at what level
+
+-  Setting and querying nested parallelism
+
+-  Setting, initializing and terminating locks and nested locks
+
+-  Querying clock time
 
 
 
 ---
-name: thread-issues
-### Threading Issues
+name: openmp-example
+### OpenMP Example Program
 
-There are many issues that must be resolved when designing a libary to manage threads
-or an operating system that supports them. The decisions about how to resolve these issues
-vary from one system to another.
+Following is a simple OpenMP program, demonstrating two parallel regions
+with sequential code in between. OpenMP creates a thread for each core by default.
+
+```C
+#include <omp.h>
+#include <stdio.h>
+
+int main (int argc, char *argv[])
+{
+    #pragma omp parallel  // executed by default number of threads
+    {
+        printf("I am a distinct thread.\n");
+    }
+
+    // The following code is executed only by the master thread.
+    omp_set_num_threads(8);        // set number of threads to 8
+    int N = omp_get_max_threads(); // get max num threads
+    printf("There are %d threads\n", N);
+
+    #pragma omp parallel   // Executed by 8 threads
+    {
+        int ID = omp_get_thread_num();  // get thread id of executing thread
+        printf("hello world from thread %d\n ", ID);
+    }
+    return 0;
+}
+```
+---
+name: grand-central-dispatch
+### Grand Central Dispatch
+
+.bluebold[Grand Central Dispatch] (.bluebold[GCD]) is a technology developed by Apple Inc. for use  on
+symmetric multiprocessors/cores. In 2009, the underlying library,
+.fixedblue[libdispatch], was released as open source under the .fixedblue[Apache 2.0] license.
+
+- It provides support for programs written in various languages, including
+.fixedblue[C], .fixedblue[C++],  .fixedblue[Objective-C], and .fixedblue[Swift].
 
 --
 
-- When a thread issues a .fixedblue[fork()] system call, should just the calling thread
-be duplicated in the child or should all threads be duplicated?
+- GCD is an implementation of .greenbold[task parallelism] ([see definition](#parallelism-models))
+based on .greenbold[thread pools]. Thread pool management is implicit; the library manages
+the threads without the programmer's involvement.
+The programmer specifies the tasks that can be run in parallel.
+
+--
+
+- A task can be expressed either as a function or as a .greenbold[block].
+A .bluebold[block] is an extension to the syntax of C, C++, and Objective-C  that
+encapsulates code and data into a single object.
+A block is specified by a caret .fixedblue[^] inserted in front of a pair of braces
+.fixedblue[{ }]:
+  ```C
+  ^{ printf("This is a block"); }
+  ```
+
+- GCD queues the designated tasks for execution and schedules them onto an available thread
+to run on any available processor.
+
+--
+
+- The underlying support for .fixedblue[libdispatch] is the POSIX threads
+library, but most of the support comes from non-POSIX compliant Apple extensions.
+
+---
+name: gcd-example
+### Example of a GCD Program
+
+This is an example of a Grand Central Dispatch program. It creates a block
+that just prints a message with the id of the thread that it is assigned to.
+The block is dispatched onto a concurrent queue.
+
+
+The code is designed to show a bit of the internals of GCD.
+It is based on code written by Jonathan Levin (http://newosxbook.com/articles/GCD.html).
+
+```C
+#include <stdio.h>
+#include <dispatch/dispatch.h>
+#include <pthread.h>
+
+int main (int argc, char *argv[])
+{
+    void (^myblock) (void) =
+         ^{ printf("My pthread id is %d\n", (int) pthread_self()); };
+    dispatch_queue_t myqueue =
+       dispatch_queue_create("example of queue",  DISPATCH_QUEUE_CONCURRENT);
+
+    dispatch_group_t dgroup = dispatch_group_create();
+    dispatch_group_async(dgroup, myqueue, myblock);
+
+    int rc= dispatch_group_wait(dgroup, DISPATCH_TIME_FOREVER);
+    return rc;
+}
+```
+
+---
+name: threading-issues
+layout: false
+class: center, middle, inverse
+## Threading Issues
+We explore some of the issues that arise  in the design and implementation of
+threading systems, whether they are in user level libraries or kernels.
+
+---
+template: tinted-slide
+layout: true
+
+
+---
+name: fork-issues
+### Issues with .fixedblue[fork()]
+
+The .fixedblue[fork()] system call was designed for processes. Threads were not
+part of UNIX when it was invented. When a process calls .fixedblue[fork()], a new one is created
+that is nearly identical to the original.
+
+When a thread that is part of a process issues a .fixedblue[fork()] system call,
+a new process is created.
+.redbold[Should just the calling thread be duplicated in the child process or should all threads be duplicated?]
 
 --
 
   - Most implementations duplicate  just the calling thread. Duplicating all threads
 is more complex and costly.
 
+  - But some systems provide both possibilities with .fixedblue[fork()]. For example,
+__Oracle Solaris__'s .fixedblue[fork()] duplicates all threads but its .fixedblue[fork1()]
+duplicates just the calling thread.
+
+
+
+---
+name: exec-issues
+### Issues with the .fixedblue[exec()] Family
+
+The various system calls in the .fixedblue[exec()] family for processes replace the process's address space entirely,
+giving it a new program to execute. For example, the call
+```C
+execve("/bin/echo", argv, envp);
+```
+would cause the calling process to execute the .fixedblue[/bin/echo] program with the arguments
+passed in .fixedblue[argv] using the environment variables pointed to by .fixedblue[envp].
+
+With multithreaded programs, the question is,
+when a thread makes this call,
+.redbold[should the entire process be replaced, including all threads?]
+What other behavior is possible?
+
 --
 
-- When a thread's execution results in an exception, such as a segmentation fault, or a
-divide-by-zero exception, should just that thread be terminated, or the entire process?
+The .fixedblue[POSIX] requirement is that an .fixedblue[execve()]  system call
+from any thread in a multithreaded process must cause all other threads in that
+process to terminate and the calling thread to complete the .fixedblue[execve()].
 
--
+Modern Linux has this implementation.
 
+--
+
+Earlier versions of  Linux detached the calling thread from the original process
+and ran the new program in it, letting all other threads continue to run in the old
+address space.
+
+---
+name: signals
+### Signals
+
+Signals are a complex topic, even just for single-threaded programs.
+We will explain signals in an intuitive way to start.
+
+You should think of yourself as a process. Assume that
+when the phone rings, your default behavior is to answer it. Assume too that you are a responsible
+driver and that when you are driving a car you always keep your seat belt buckled.
+Lastly, you will not answer the phone when you are driving.
+
+---
+name: signals-telephone
+template: signals
+
+
+.left-column-large[
+You are busy doing something and the phone rings.
+]
+.right-column-small[
+<img src="figures/phone-ringing.png" width=100% alt="telephone ringing">
+]
+--
+.left-column-large[
+You stop and answer it. The phone ringing is a .bluebold[signal] sent to you.
+Your answering the call means that the signal was .bluebold[delivered] to you.
+The act of answering the call is called .bluebold[handling the signal].
+]
+
+.footnote[
+Image from Wikimedia Commons by Videoplasty.com, CC-BY-SA 4.0.
+]
+--
+
+.below-column[
+The phone ring is an .bluebold[asynchronous signal] because it can happen any time
+in an unpredictable way.
+]
+
+--
+
+The fact that you answer the phone is part of your .bluebold[disposition] towards
+the phone ringing signal.
+
+---
+name: signals-seatbelt
+template: signals
+
+.left-column-large[
+Now you get in the car and start to drive. An annoying horn sounds to remind you that
+your seat belt is not fastened.
+]
+.right-column-small[
+<img src="figures/seatbelt.png" width=60% alt="seatbelt">
+]
+--
+.left-column-large[
+You fasten the seat belt. The horn sounding  is
+a .bluebold[signal] as well, and your fastening the seat belt means that
+the horn signal was .bluebold[delivered] to you, and that you .bluebold[handled the signal] as well.
+]
+.below-column[
+Unlike the phone ringing, the horn sounding is a .bluebold[synchronous] signal.
+It happened because of your failure to buckle up. As a process, you skipped a step
+you were supposed to do, the operating system (the car) intervened and reminded you of it.
+]
+
+---
+name: signals-blocking
+template: signals
+
+.left-column-large[
+You are now driving the car. You remember that you are not supposed to answer
+the phone while driving.
+]
+--
+.right-column-small[
+<img src="figures/phone-ringing-off.png" width=100% alt="telephone ringing">
+]
+--
+.left-column-large[
+You silence the phone. You have just temporarily .bluebold[blocked] the phone-ringing
+signal from being .bluebold[delivered] to you. While the phone is silenced, people can still call,
+but you do not answer the phone. When you finish driving, you
+can restore the phone's volume,  unblocking the signal.
+]
+
+.below-column[
+Blocking a signal does not prevent someone from calling; it just prevents the signal
+from being delivered to you.
+
+]
+---
+name: signal-handling
+### Signal Handling
+
+A .bluebold[signal] is an empty message sent to a process because an event occurred.
+It has type and nothing more.
+
+--
+
+A signal may be received either .bluebold[synchronously] or .bluebold[asynchronously].
+Traps and other exceptions are examples of signals received synchronously. Timer interrupts (.fixedblue[SIGALRM]),
+keyboard interrupts Control-C (.fixedblue[SIGINT]),
+and terminal disconnections (.fixedblue[SIGHUP]) are examples of asynchronously received signals.
+
+--
+
+The sequence of actions with respect to any type of signal is:
+
+ 1. A signal is .bluebold[generated] by some event.
+ 2. The signal is .bluebold[sent] to a process by the kernel.
+ 3. The signal is .bluebold[pending] until the next step.
+ 4. The signal is .bluebold[delivered] to the process when the process takes some action with
+respect to it, which is either performing  the .greenbold[default action], .greenbold[ignoring] it, or  catching
+the signal with a .greenbold[signal handler].
+The .bluebold[disposition] of the signal is how the process behaves when the signal
+is delivered.
+
+--
+
+A .bluebold[signal handler] is a function that is run when a signal is delivered.
+Signal handlers are registered with the kernel.
+If there is no user-defined signal handler, a default action is taken.
+
+--
+
+Each signal type has a .bluebold[pending flag] indicating whether or not it is
+pending, and a .bluebold[blocked flag] indicating whether or not it is blocked.
+
+---
+name: signal-handling-questions
+### Signals and Threads: Issues
+
+The question of how to handle signals in
+a multithreaded process has been debated since
+the early days of POSIX threading, and there have been
+extensive changes in the POSIX standard over the past few decades.
+
+There are many questions. We cannot address them all.
+
+--
+
+- When a signal is sent to a process, where is it delivered?
+  - to a single specified thread?
+  - to any single thread?
+  - to all threads?
+  - to some threads?
+
+- Does every thread have its own set of flags?
+
+--
+
+- Can every thread have its own signal handlers?
+
+--
+
+- Can threads send signals to specific threads or to all threads in a process?
+
+---
+name: signal-handling-threads
+### Signals and Threads: Solutions
+
+Different systems have solved these problems in different ways.
+
+In Linux and POSIX, for example,
+
+--
+
+- A signal may be generated for a process as a whole (meaning all threads in it),
+or for a specific thread.
+
+--
+
+- Signals that are generated because of execution of a machine-language instruction
+(traps and exceptions) are sent to the thread that executed that instruction.
+
+--
+
+- A process-directed signal may be delivered to any one of the threads that
+does not currently have that signal blocked. If more than one of the threads
+has the signal unblocked, it is delivered to any one of them.
+
+--
+
+- Every thread has its own pending and blocked flags.
+
+--
+
+- The dispositions of all signals are process-wide, meaning that all
+threads share the same signal handler, or all ignore the signal, and so on.
+
+--
+
+- In Linux, there are functions (system calls and library routines) that allow
+a process or thread to send signals to one or more other processes (.fixedblue[kill]) or
+to specific threads (.fixedblue[tgkill]).  A thread can send a signal to itself (.fixedblue[raise])
+or to a thread in its same process (.fixedblue[pthread_kill]).
+
+
+
+---
+name: thread-cancellation
+### Thread Cancellation
+
+Sometimes a thread might need to be terminated by another thread before it has
+finished its work.
+
+.bluebold[Thread cancellation] is the act of terminating a thread that has not yet
+terminated itself. With thread cancellation, one thread can .greenbold[try to terminate] another.
+
+The fact that a thread tries to terminate another thread does not mean it will succeed.
+
+--
+
+There are many reasons to allow thread cancellation.
+For example, suppose threads are searching in parallel for
+a key in a large database. Each is searching through a different portion of the
+data. Only one thread can find the key. When it does, the others should not continue
+to run, because they will accomplish nothing.
+
+We need a way for the thread that finds the key to terminate the others.
+
+--
+
+.bluebold[Terminology]: A thread is .bluebold[canceled] if it is terminated.
+The thread to be canceled is called the .bluebold[target thread].
+
+---
+name: thread-cancellation-issues
+### Thread Cancelability
+
+Most thread systems provide some  means for one thread to request
+cancellation of another.
+One issue is whether cancellation should be immediate, or should be delayed.
+Sometimes a thread is in the middle of a computation that should not be interrupted
+or else shared data will be corrupted.
+
+--
+
+POSIX defines two types of cancellation:
+
+- .bluebold[Asynchronous cancellation]: A thread can cancel the target thread
+immediately.
+
+- .bluebold[Deferred cancellation]: A thread attempts to cancel the target thread, but
+the target thread is not canceled immediately. Instead, it terminates when it reached
+a point in its execution  when it is safe to do so.
+
+---
+name: thread-cancelability
+### Thread Cancelability Control
+
+In POSIX, a thread decides its own fate.
+
+- It can set its .greenbold[cancelability type] to be either asynchronous or deferred.
+For example, this code is used by a thread to give it deferred cancelability:
+```C
+    retval = pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
+```
+--
+
+- It can also enable or disable cancelability. For example, this disables
+cancelability for the thread:
+```C
+    retval = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+```
+--
+
+- Together these give it control over when, if at all, it can be terminated by another thread.
+
+--
+
+When threads have deferred cancelability, they terminate when they reach safe points in
+their code, called .bluebold[cancellation points]. Cancellation points are calls to
+selected functions. When the thread calls one of these functions, it terminates.
+
+---
+name: thread-cancellation-points
+### Thread Cancellation Points
+
+Most of the blocking system calls in the POSIX and standard C library are cancellation points.
+If you enter the command
+```bash
+man pthreads
+```
+on a Linux system, you can find the complete list of cancellation points on your system.
+
+--
+
+The Pthreads API has several functions related to thread cancellation.
+See the program .fixedblue[thread_cancel_demo.c] on the server for a complete,
+documented example.
 
 
 ---

@@ -97,6 +97,9 @@ name:toc
 ---
 ### Table of Contents
 
+[Inquiring About Object Code](#link-exploration)<br>
+[Displaying Information About Object Files](#readelf)<br>
+[Using .fixedblue[ltrace] For Dynamic Information](#tracing)<br>
 [Portability](#portability)<br>
 [Solutions to Creating Portable Executables](#portability-solutions)<br>
 [Operating System Design](#opsys-design)<br>
@@ -117,6 +120,9 @@ name:toc
 [Hybrid Operating Systems](#hybrids)<br>
 [macOS](#macos-x)<br>
 [Bootstrapping the System: Loading the Kernel](#system-boot)<br>
+---
+### Table of Contents
+
 [Bootstrapping the System: After Kernel Load](#system-boot-2)<br>
 [References](#references)<br>
 <!--TOC_END-->
@@ -305,7 +311,7 @@ count: false
 class: breakout
 ### Command-Line Interface Activity
 
-- What other shells are available in Linux systems? Make a list of them.
+- What other shells are available in __Linux__ systems? Make a list of them.
 
 - Of the shells that you found, which are .greenbold[free and open source] shells?
 
@@ -330,7 +336,7 @@ count: false
 ]
 
 .right-column-small[
-In Linux, there is an application named .fixedblue[Terminal] that opens a window in which you can run
+In __Linux__, there is an application named .fixedblue[Terminal] that opens a window in which you can run
 a shell such as .fixedblue[bash].
 ]
 
@@ -345,7 +351,7 @@ count: false
 ]
 
 .right-column-small[
-In Linux, there is an application named .fixedblue[Terminal] that opens a window in which you can run
+In __Linux__, there is an application named .fixedblue[Terminal] that opens a window in which you can run
 a shell such as .fixedblue[bash].
 
 We can enter the .fixedblue[date] command by typing the word ".fixedblue[date]".
@@ -362,7 +368,7 @@ count: false
 ]
 
 .right-column-small[
-In Linux, there is an application named .fixedblue[Terminal] that opens a window in which you can run
+In __Linux__, there is an application named .fixedblue[Terminal] that opens a window in which you can run
 a shell such as .fixedblue[bash].
 
 We can enter the .fixedblue[date] command by typing the word ".fixedblue[date]" followed by newline.
@@ -417,7 +423,7 @@ In UNIX and UNIX-like systems,  a command can be implemented in one of two ways:
   as is the .fixedblue[read] command.
 
 - .greenbold[In a separate, executable file], in which case it is called a .bluebold[system program];
-   - For example, in Linux systems, the .fixedblue[grep] and .fixedblue[date] commands
+   - For example, in __Linux__ systems, the .fixedblue[grep] and .fixedblue[date] commands
   are in the files .fixedblue[/bin/grep] and .fixedblue[/bin/date] respectively.
 
 --
@@ -483,7 +489,7 @@ or by voice commands.
 The cursor is used to execute commands,  select elements, draw, etc.
 
 - Most systems provide a GUI, such as Microsoft's __Windows__, Apple's __macOS__, and
-Linux's __Gnome__, or __KDE__.
+__Linux__'s __Gnome__, or __KDE__.
 
 ]
 
@@ -606,18 +612,18 @@ to obtain kernel services.
 Therefore, programming language libraries usually provide  wrapper functions in that language for
 all system calls.
 For example, the GNU C library, .fixedblue[glibc], contains wrapper functions for
-all of the system calls in GNU Linux.
+all of the system calls in GNU __Linux__.
 
 This is not to say that every function in that library is a wrapper function. It has other
 functions too. And it might have functions that make several system calls.
-But it is true that almost every system call in Linux has a wrapper function in .fixedblue[glibc].
+But it is true that almost every system call in __Linux__ has a wrapper function in .fixedblue[glibc].
 
 --
 
 The three most common APIs are the
 - .bluebold[WinAPI] for __Windows__ (.bluebold[Win64] for 64-bit __Windows__),
 -  .bluebold[POSIX API] for POSIX-based systems, which includes
-virtually all versions of UNIX, Linux, and macOS, and
+virtually all versions of UNIX, __Linux__, and __macOS__, and
 - .bluebold[Java API] for the Java virtual machine (JVM)
 
 ---
@@ -680,7 +686,7 @@ corresponding wrapper function in the user-level library.
 name: syscall-example
 ### Example Using System Calls
 
-In Linux, the system call to read from a file is .fixedblue[read()], to write to
+In __Linux__, the system call to read from a file is .fixedblue[read()], to write to
 a file is .fixedblue[write()], to open a file, whether for reading or writing,
 is .fixedblue[open()], and to create a new file is .fixedblue[creat()].super[1].
 
@@ -689,7 +695,7 @@ is .fixedblue[open()], and to create a new file is .fixedblue[creat()].super[1].
 ]
 
 .left-column-small[
-The Linux .fixedblue[cp] command has many uses, but the simplest use is to copy an existing
+The __Linux__ .fixedblue[cp] command has many uses, but the simplest use is to copy an existing
 file to a new file:
 .center[
 ```bash
@@ -740,7 +746,7 @@ name: read-syscall
 
 The .fixedblue[read()] system call is a powerful call in UNIX, because it can be
 used to read from anything that can be mapped to a file, which is to say all devices and files.
-We use it to demonstrate how you can learn about the Linux API from the manual pages.
+We use it to demonstrate how you can learn about the __Linux__ API from the manual pages.
 
 Type ".fixedblue[man read]" in a terminal to see the beginning of the manual page for it,
 which provides its API and also shows that the .fixedblue[unistd.h] header file must be included to use it.super[1]:
@@ -804,7 +810,7 @@ call, the mode bit is switched to kernel mode and a system call handler runs.
 This handler handles all system calls.
 
 The system call handler knows which system call to invoke because each system call
-has a number associated with it, that is read from a register. (In Linux it is
+has a number associated with it, that is read from a register. (In __Linux__ it is
 in the .fixedblue[eax] register.)
 
 --
@@ -851,21 +857,21 @@ Neither the block method nor the stack method  limits
 the number of parameters.
 
 .lightbluebox[
-Linux uses a combination of the register method and the block method. If the
+__Linux__ uses a combination of the register method and the block method. If the
 parameters fit into the registers, it uses them, otherwise the block method is used.
-In the current version, Linux does not allow more than six parameters to a system call.
+In the current version, __Linux__ does not allow more than six parameters to a system call.
 ]
 ---
 name: syscall-implementation
 ### Under the Hood: System Calls
 
 Different operating systems implement system calls in different ways. We describe
-how they are implemented in Linux, which is roughly how they are implemented in
-macOS. The __Windows__ implementation is different.
+how they are implemented in __Linux__, which is roughly how they are implemented in
+__macOS__. The __Windows__ implementation is different.
 
 --
 
-The wrapper function for a system call in Linux usually does little more
+The wrapper function for a system call in __Linux__ usually does little more
 than the following:
 
 - It copies the arguments and the unique system call number to the registers
@@ -896,7 +902,7 @@ back, of a call by a main program to a fictitious system call named .fixedblue[f
 
 <img src="figures/syscall_full_flow.png" width=95% alt="Control Flow of System Call">
 
-- The code in the .fixedblue[glibc] library is a mix of pseudocode and assembly.
+- The code in the figure labeled .fixedblue[glibc] library is a mix of pseudocode and assembly.
 The call .fixedblue[SYSCALL] does not really pass the number of the call; it would be in
 a register.
 
@@ -910,7 +916,7 @@ name: syscall-read
 ### Flow of .fixed[read] System Call in Linux
 
 The following diagram.super[1] depicts  the sequence of events that take place when a
-.fixedblue[C] program calls the Linux .fixedblue[read()] system call.
+.fixedblue[C] program calls the __Linux__ .fixedblue[read()] system call.
 (The compiled call  is to .fixedblue[_libc_read()]).
 
 .center[
@@ -926,7 +932,7 @@ name: syscall-types
 ### Categories of System Calls
 
 Most operating systems provide a large number of system calls.
-For example, there are more than four hundred in a typical Linux version.
+For example, there are more than four hundred in a typical __Linux__ version.
 
 To put some structure around them,
 we can group most system calls into the following categories:
@@ -1180,7 +1186,7 @@ name: sysprog-categories
 ### Categorizing System Programs
 
 It is difficult to categorize all system programs, but generally speaking,
-we can lump them into some large groups as follows. Some examples in Linux are given.
+we can lump them into some large groups as follows. Some examples in __Linux__ are given.
 
 - .greenbold[File and directory manipulation]
    - creation, deletion, modification, printing, renaming, copying, checking and changing attributes
@@ -1200,7 +1206,8 @@ name: sysprog-categories-1
 
 - .greenbold[Program loading and execution]
   - absolute loaders, relocatable loaders,  dynamic linker/loaders (.fixedblue[ld-linux]),
-object dumpers (.fixedblue[objdump]), signal tracers (.fixedblue[strace]), etc.
+object dumpers (.fixedblue[objdump]), system call tracers (.fixedblue[strace]),
+library call tracers (.fixedblue[ltrace]), etc.
 
 - .greenbold[Communication and network services]
   - remote logins (.fixedblue[ssh]), communicating with servers (.fixedblue[curl]),
@@ -1265,7 +1272,7 @@ for instance), or the C++ .fixedblue[iostreams] library.
 name: compiling
 ### Steps in Building an Executable: Compilation
 
-Suppose that the program to be build consists of the following files:
+Suppose that the program to be built consists of the following files:
 ```bash
 main.c  utilities.c  mathstuff.c  io.c
 ```
@@ -1372,7 +1379,7 @@ copy. In UNIX, static libraries end in ".fixedblue[.a]" and dynamic libraries,
 called .greenbold[shared objects], end in ".fixedblue[.so]". E.g,
 .fixedblue[libm.a] and .fixedblue[libm.so].
 
-Modern Linux defaults to dynamic linking. Hence
+Modern __Linux__ defaults to dynamic linking. Hence
 ```bash
    gcc -o myprog main.o utilities.o mathstuff.o io.o  -lm
 ```
@@ -1454,6 +1461,117 @@ compilers, linkers, and loaders.
 ]
 
 ---
+name: link-exploration
+###  Inquiring About Object Code
+
+There are several command-line tools that can be used to learn about
+object files and executables.
+In particular, there are tools that show what libraries
+will be dynamically linked to a program, what symbols in a program are defined
+externally, and what symbols are exported by a library, whether it is a dynamically
+or statically linkable.
+
+--
+
+- To see what libraries will be dynamically-linked to a program, use the .fixedblue[ldd]
+command. For example
+  ```bash
+  $  ldd /bin/ls
+  ```
+will show what libraries are linked to .fixedblue[ls].
+
+- To see what symbols are external in an object or an executable, meaning not defined
+in it but references in it, you can use either .fixedblue[objdump -T] or .fixedblue[nm -D]:
+  ```bash
+  $  nm -D /bin/ls
+  ```
+displays a list of all symbols (functions, constants, etc) used by .fixedblue[ls], as does
+  ```bash
+  $  objdump -T  /bin/ls
+  ```
+except that .fixedblue[objdump -T] provides much more output for each symbol.
+
+---
+name: readelf
+### Displaying Information About Object Files
+
+
+The .fixedblue[objdump] command can be used for much more than this.
+For example, you can use it to look at the  assembly code in an object file:
+  ```bash
+  $  objdump -d  /bin/ls
+  ```
+which  disassembles .fixedblue[/bin/ls].
+
+
+Alternatively, you can use the .fixedblue[readelf] command, which can display the contents
+of all ELF files. To use this command to look at the symbols in .fixedblue[/bin/ls], you can use
+  ```bash
+  $  readelf -s  /bin/ls
+  ```
+---
+name: tracing
+### Using .fixedblue[ltrace] For Dynamic Information
+
+The preceding tools let you see the static properties of object code.
+
+--
+
+There are tools that let you trace a running program in various ways.
+One is .fixedblue[ltrace], which intercepts and records the dynamic library calls
+made by a running program.
+
+It is useful because it helps in determining which library calls are failing.
+It is also able to receive signals for segmentation faults, and other exceptions.
+
+To use it:
+```
+$ ltrace [options] <command-to-run> <command-args>
+```
+<!-- -->
+as in
+
+```bash
+$ ltrace date
+```
+which generates a lot of output. It can be limited by using the .fixedblue[-l] option with
+a library name, to limit it to calls to that library:
+```bash
+$ ltrace -l libc.so.6  date
+```
+
+
+
+
+---
+name: linking-activity
+count: false
+class: breakout
+###  Linking Activity
+
+
+1. If this is a group activity, follow the instructions on Piazza to create the
+output file, herein called the .bluebold[pad].
+
+1. Navigate to the demos directory on the server:
+  ```bash
+  $ cd /data/biocs/b/student.accounts/cs340_sw/demos
+  ```
+
+2. Pick any executable in that directory or its subdirectories and use a command
+to list its dynamically linked libraries.  Write that list in the pad.
+
+3.  For that same executable, use .fixedblue[nm] to list the externally defined symbols.
+Write the "undefined" symbols (prefixed by "U") in the pad.
+
+4.  Locate the C standard library, .fixedblue[libc.so.6], by running the command
+```bash
+$ find /lib -name "libc.*"
+```
+and then use a command to display the symbols that it exports. Pick any 5
+functions and write each one with its hexadecimal address in the pad.
+
+---
 name: portability
 ### Portability
 
@@ -1466,13 +1584,13 @@ the layout of the header, instructions, and variables.
 
 --
 
-- The standard format for executable and relocatable files in Linux is
+- The standard format for executable and relocatable files in __Linux__ is
 .bluebold[ELF], short for .bluebold[Executable and Linkable Format].
 There are two different formats, one for files that are executable and one
 for files that can be linked into executables such as library files.
 
 - __Windows__ systems use the .bluebold[Portable Executable] (.bluebold[PE])
-format, and macOS uses the .bluebold[Mach-O] format.
+format, and __macOS__ uses the .bluebold[Mach-O] format.
 
 --
 
@@ -1541,10 +1659,10 @@ system every day.
 
 The hardware affects the design greatly:
 
-- The Android and iOS operating systems are
+- The __Android__ and __iOS__ operating systems are
 designed for small, low-power, mobile, touch screen devices such as smartphones.
 
-- macOS is designed for Apple's desktop, laptop, and home computers, and much development
+- __macOS__ is designed for Apple's desktop, laptop, and home computers, and much development
 effort was put into its graphical user interfaces.
 
 - UNIX was designed to run on hardware with support for dual-mode initially, which
@@ -1570,7 +1688,7 @@ Various laws and principles have been used in the design of operating systems
 --
 
 - .bluebold[Information hiding]:<br>
-Separating the methods that implement a particular component from the design
+Separating the methods that .redbold[implement] a particular component from the .redbold[design]
 of that component itself makes system maintenance and modification easier.
 
 --
@@ -1589,7 +1707,7 @@ structure and data are hidden.
 --
 
 - .bluebold[Principle of least privilege]:<br>
-In a particular abstraction layer of a computing environment, every enitity
+In a particular abstraction layer of a computing environment, every entity
 (process, user, program, etc.) must have only the privilege needed to access only the information
 and resources that are necessary for its legitimate purpose.
 
@@ -1653,7 +1771,7 @@ policies. If so,
 Microsoft did not make the separation in __Windows__: mechanism and policy are tied together
 in the  system to enforce their global "look and feel".
 
-In contrast, Linux is an open source operating system;  anyone can make changes to
+In contrast, __Linux__ is an open source operating system;  anyone can make changes to
 how various features are implemented, i.e., change mechanisms, and
 can propose changes to what parts of the system should do.
 
@@ -1682,7 +1800,7 @@ UNIX was the first operating system to be implemented in .fixedblue[C].
 
 Now, most operating systems are written in a mix of assembly and .fixedblue[C] and/or .fixedblue[C++].
 
-- The kernel is usually written in assembly and .fixedblue[C]. (Android and Linux are examples.)
+- The kernel is usually written in assembly and .fixedblue[C]. (__Android__ and __Linux__ are examples.)
 
 - The libraries are written in .fixedblue[C] and/or .fixedblue[C++].
 
@@ -1724,7 +1842,7 @@ The simplest structure is a .bluebold[monolithic] one:
 - All of the functionality of the kernel is in a single, static binary file that
 runs in a .redbold[single address space].
 
-- Early versions of UNIX were monolithic, as were early versions of Linux. The structure of the
+- Early versions of UNIX were monolithic, as were early versions of __Linux__. The structure of the
 original UNIX operating system is diagrammed below.
 
 .center[
@@ -1738,11 +1856,11 @@ components to lower ones.
 name: monolithic-2
 ###  Monolithic Structure: Linux
 
-Linux is also monolithic, but it also  uses dynamically loadable
+__Linux__ is also monolithic, but it also  uses dynamically loadable
 kernel modules, described soon. The division of tasks and layering are roughly the same as the original UNIX
 system.
 
-The much more detailed illustration below of the structure of the Linux kernel is
+The much more detailed illustration below of the structure of the __Linux__ kernel is
 based on the description of it in _Modern Operating Systems_ by Andrew Tanenbaum.
 
 
@@ -1763,6 +1881,8 @@ with successively higher layers  built upon and dependent upon lower layers.
 Equivalently, this structure can be  viewed as a set of .greenbold[concentric rings], with
 outer rings built upon and dependent upon inner rings.
 We prefer the ring visualization.
+
+--
 
 .left-column[
 The innermost ring, called .greenbold[ring 0], is the hardware;
@@ -1898,7 +2018,7 @@ class: breakout
 ### The Torvalds-Tanenbaum Debate
 
 - Read about the Torvalds-Tanenbaum debate in
-at [Wikipedia](https://en.wikipedia.org/wiki/Tanenbaum%E2%80%93Torvalds_debate).
+[Wikipedia](https://en.wikipedia.org/wiki/Tanenbaum%E2%80%93Torvalds_debate).
 Since it is a lot of reading, just read the section entitled "The Debate".
 
 - What were the major disagreements?
@@ -1952,7 +2072,7 @@ dynamically as needed, while the kernel is running.
 The other services are provided in kernel modules, which are executable
 files that can be loaded and linked into the kernel at run-time.
 
-Linux uses loadable kernel modules for a variety of services,
+__Linux__ uses loadable kernel modules for a variety of services,
 ranging from  device drivers to file systems to cryptographic services.
 They can be inserted into and removed from the kernel  from the command line.
 
@@ -1961,7 +2081,7 @@ They can be inserted into and removed from the kernel  from the command line.
 name:hybrids
 ### Hybrid Operating Systems
 
-Most operating systems are hybrids of two or more models. For example, Linux is
+Most operating systems are hybrids of two or more models. For example, __Linux__ is
 a monolithic system but it also uses loadable kernel modules.
 
 __Windows__ operating systems are mostly monolithic but provides support for separate subsystems
@@ -1970,15 +2090,15 @@ __Windows__ operating systems are mostly monolithic but provides support for sep
 Some operating systems were created as hybrids, the most notable example being
 .bluebold[macOS] and .bluebold[iOS].
 
-macOS is a complex, partially layered system, built on top of the .greenbold[Darwin] kernel.
-Darwin is the core of macOS, consisting of an open source Mach microkernel and elements of FreeBSD UNIX.
+__macOS__ is a complex, partially layered system, built on top of the .greenbold[Darwin] kernel.
+Darwin is the core of __macOS__, consisting of an open source Mach microkernel and elements of FreeBSD UNIX.
 It is an open-source, mostly .greenbold[POSIX-compliant], Unix-like operating system.
 
 ---
 name: macos-x
 ### macOS
 
-The macOS architecture is layered. The GUI is the top layer. Below that
+The __macOS__ architecture is layered. The GUI is the top layer. Below that
 are various APIs used by programs to communicate with lower layers, such as .greenbold[Cocoa],
 .greenbold[BSD], and .greenbold[Quicktime].
 The Darwin kernel is the core, and is composed of a microkernel and elements
@@ -2032,10 +2152,10 @@ disk location called the .bluebold[boot block].
 --
 
 1. The program stored in the boot block loads the kernel into memory.
-  - The Linux kernel image is a compressed file that must be  extracted
+  - The __Linux__ kernel image is a compressed file that must be  extracted
     after it is loaded into memory. Being compressed makes loading faster.
 
-  - .bluebold[GRUB] is an open source bootstrap program for Linux and UNIX systems.
+  - .bluebold[GRUB] is an open source bootstrap program for __Linux__ and UNIX systems.
     Boot parameters are in a GRUB configuration file, and GRUB allows changes to
     be made at boot time, such as selecting which kernel to load.
 
@@ -2048,7 +2168,7 @@ After the kernel is loaded, the bootstrap program transfers control to it.
 - What happens next is kernel-dependent. Most systems will load drivers,
 start services, and eventually display a user interface to allow users to login.
 
-- The Linux kernel loads necessary drivers, switches the root file system from a
+- The __Linux__ kernel loads necessary drivers, switches the root file system from a
 temporary RAM location to the actual root file system location.
 
 - It then creates the  initial process, .fixedblue[systemd], in the system,

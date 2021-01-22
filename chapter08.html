@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>Deadlock</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="css/slides.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+    <textarea id="source">
+
+class: center, middle, title-slide
+
+## CSCI 340 Operating Systems
+
+<br>
+
+## Chapter 8: Deadlock
+
+.author[
+Stewart Weiss<br>
+]
+
+.license[
+Copyright 2020 Stewart Weiss. Unless noted otherwise all content is released under a
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
+]
+
+
+
+---
+name: cc-notice
+template: default
+layout: true
+
+.bottom-left[&#169; Stewart Weiss. CC-BY-SA.]
+
+---
+name: tinted-slide
+template: cc-notice
+layout: true
+class: tinted
+
+---
+name:toc
+### Table of Contents
+[Prerequisite Reading](#prereqs)<br>
+[About This Chapter](#about-chapter)<br>
+[Chapter Objectives](#objectives)<br>
+[An Example of Deadlock](#deadlock-examples)<br>
+[The Example Visualized](#deadlock-visualized)<br>
+[Model Characteristics](#system-model-intro)<br>
+[Resource Use](#resource-use)<br>
+[Deadlock State](#deadlock-def)<br>
+[References](#references)<br>
+<!--TOC_END-->
+
+
+---
+name: prereqs
+### Prerequisite Reading
+
+Before reading these slides, you should be familiar with
+
+
+- Processes and concurrency ([Chapter 3](chapter03.html))
+
+- Threads and the POSIX Threads API ([Chapter 4](chapter04.html))
+
+- Process synchronization tools and primitives ([Chapter 6](chapter06.html))
+
+
+---
+name: about-chapter
+### About This Chapter
+
+Chapter 6 introduced deadlock in an informal way and gave an example of it, and
+in Chapter 7, a solution to the Dining Philosophers Problem was shown to cause
+deadlock.
+
+This chapter examines deadlock in greater depth, presenting
+.greenbold[formal models of systems of processes] that make it
+possible to reason about deadlock and prove theorems about it.
+
+In particular, it explores the most important issues related to deadlock, which are:
+
+.lightbluebox[
+- Deadlock Characterization
+
+- Deadlock Prevention
+
+- Deadlock Avoidance
+
+- Deadlock Detection
+
+- Recovery from Deadlock
+]
+
+As we did in Chapters 6 and 7,
+we use the terms "process" and "thread" interchangeably,
+
+---
+name: objectives
+### Chapter Objectives
+
+Having read and understood the content of this chapter, you should be able to
+
+- provide concrete examples of how deadlock can occur when mutex locks
+are used for synchronizing access to shared resources;
+
+- state the four conditions that must exist for deadlock to occur;
+
+- explain what a .greenbold[resource allocation graph] is and determine
+  whether or not deadlock is present in a  system modeled by one;
+
+- describe and compare the four high-level ways of preventing deadlock;
+
+- apply the .greenbold[Banker's Algorithm] to a system of processes;
+
+- apply the deadlock detection algorithm to a system of processes;
+
+- compare different methods of recovering from deadlock.
+
+
+---
+name: deadlock-examples
+### An Example of Deadlock
+
+Suppose that two processes, .fixedblue[P1] and .fixedblue[P2],  each need
+to modify two files  .fixedblue[R1] and .fixedblue[R2].
+
+Suppose also that files cannot be modified by more than one process at a time.
+
+Processes can only acquire files one at a time, and each needs to have both
+files open to perform its update.
+
+Therefore, each must acquire both files, perform its update, and then release
+the two files. Their code is something like the following.
+
+.left-column[.left[
+```C
+   P1:
+       request(R1);
+       `request(R2);`
+       perform update;
+       release(R2);
+       release(R1);
+```
+]]
+.right-column[.left[
+```C
+   P2:
+       request(R2);
+       `request(R1);`
+       perform update;
+       release(R1);
+       release(R2);
+
+```
+]]
+
+--
+
+.below-column[
+If they are each granted their first request,
+i.e., .fixedblue[P1] gets .fixedblue[R1]  and .fixedblue[P2] gets .fixedblue[R2] ,
+before either requests the second file (in the highlighted line above),
+then each process will be holding a file the other needs and in a blocked state,
+waiting for the file held by the other.
+
+This is an example of .bluebold[deadlock].
+]
+
+---
+name: deadlock-visualized
+### The Example Visualized
+
+Suppose that we represent resources such as files by rectangular nodes, and processes by
+ellipses or circles, and
+
+we represent the fact that a process is .redbold[holding] (has acquired and not released)
+a resource by drawing a .redbold[directed edge from the resource to the process], and
+
+we represent the fact that a process is .redbold[waiting for] (has requested but not acquired)
+a resource by drawing a .redbold[directed edge from the process to the resource].
+
+Then the two deadlocked processes can be visualized by the graph below.
+
+
+.center[
+    <img src="figures/two-proc-deadlock.png" width=40% alt="2 Process Deadlock"/>
+]
+
+Notice that this graph has a .redbold[cycle]. This abstraction is the essence of
+the model we present next.
+---
+name: deadlock-characterization
+layout: false
+class: center, middle, inverse
+## The System Model
+
+We describe an abstract model of a collection of processes and resources that
+they share that will allow us to reason about deadlock.
+---
+template: tinted-slide
+layout: true
+
+---
+name: system-model-intro
+### Model Characteristics
+
+A .bluebold[system] is a collection consisting of processes and resources.
+
+- We restrict our attention to resources .greenbold[that can only be held by one process at a time].
+(Some resources, such as read-only files, can be shared.
+Some, such as mutex locks, are not shared.)
+
+- There is a  finite number .fixedblue[N] of processes
+represented by the symbols .fixedblue[P.sub[1]], .fixedblue[P.sub[2]], ...,.fixedblue[P.sub[N]].
+
+- There is a finite number .fixedblue[t] of .greenbold[resources types]
+represented by the symbols .fixedblue[R.sub[1]], .fixedblue[R.sub[2]], ...,.fixedblue[R.sub[t]].
+ - Resource types are things such as memory units, disk blocks, network interfaces, files,
+mutex locks.
+
+- Each resource type consists of a fixed number of identical, interchangeable units.
+The number of units of type .fixedblue[R.sub[k]] is .fixedblue[W.sub[k]].
+ - Examples include fixed-size memory blocks or disk blocks, tape drives, etc.
+
+---
+name: resource-use
+### Resource Use
+
+A process .fixedblue[P.sub[i]] uses a resource .fixedblue[R.sub[j]] by performing three actions:
+
+ 1. It .redbold[requests] a number of units of the resource less than .fixedblue[W.sub[j]]  (the total of that type),
+and if they are not available, it blocks waiting for them.
+
+ 2. It acquires and .redbold[uses] the resource.
+
+ 3. It .redbold[releases] all units of the resource.
+
+Usually, steps 1 and 3 above are .greenbold[system calls],
+in which case the operating system must verify and service these calls.
+
+We are mostly interested in request and release of resources managed by the kernel,
+but programmers in general must be concerned about request and release of
+non-kernel managed resources as well:
+
+- Deadlock can occur within multi-threaded applications, and steps 1 and 3 may not be system
+calls in that case. For example, an application might use the Pthreads library and
+the resources might be mutex locks provided by the library.  The acquisition and release of these
+locks are not system calls.
+
+---
+name: deadlock-def
+### Deadlock State
+
+.lightgreenbox[
+A set of processes is in a .bluebold[deadlock state] when every process in the
+set is .greenbold[waiting for an event that can be caused only by another process in the set].
+]
+
+With respect to the model we just described, the .bluebold[event] for which a process
+waits is the release of a resource by the process that holds it.
+
+Events can be other things such as the arrival of a message through a channel.
+
+- One process can be waiting for a message that another process must send,
+and the second process is waiting for the first's message:
+
+.left-column[.left[
+```C
+   P1:
+       receive(P2,m);
+       send(P2,m1);
+```
+]]
+.right-column[.left[
+```C
+   P2:
+       receive(P1,m);
+       send(P1,m2);
+```
+]]
+
+.below-column[
+This is also deadlock. Messages can be treated as resources also.
+]
+---
+name: references
+### References
+
+1. Dijkstra, E. W. _Cooperating Sequential Processes_. Mathematics Dept.. Technological
+University, Eindhoven, The Netherlands. 1965.
+
+2. Pierre-Jacques Courtois, F. Heymans, D.L. Parnas. _Concurrrent Control with "Readers"
+and "Writers"_, __Communications of the ACM__ Vol. 14, No. 10, Oct. 1971.
+
+3. Abraham Silberschatz, Greg Gagne, Peter B. Galvin. __Operating System Concepts__, 10th Edition.
+Wiley Global Education, 2018.
+
+4. Tanenbaum, Andrew S. __Operating Systems Design and Implementation__.
+Prentice-Hall, Inc., 1987.
+
+5. Linux Kernel Documentation Project.
+https://www.kernel.org/doc/html/latest/locking/mutex-design.html
+
+
+
+    </textarea>
+     <script src="js/remark.js" type="text/javascript">
+     </script>
+     <script src="js/remark_conf.js" type="text/javascript">
+     </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured"
+         type="text/javascript">
+    </script>
+
+    <script type="text/javascript">
+       <!--var slideshow = remark.create();-->
+
+      // Setup MathJax
+      MathJax.Hub.Config({
+          tex2jax: {
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+            inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+            displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+            processEscapes: true
+          }
+      });
+
+      MathJax.Hub.Configured();
+    </script>
+
+
+  </body>
+</html>

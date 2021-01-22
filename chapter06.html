@@ -34,9 +34,7 @@ name: cc-notice
 template: default
 layout: true
 
-.bottom-left[
-&#169; Stewart Weiss. CC-BY-SA.
-]
+.bottom-left[&#169; Stewart Weiss. CC-BY-SA.]
 
 ---
 name: tinted-slide
@@ -47,16 +45,17 @@ class: tinted
 ---
 name:toc
 ### Table of Contents
-[Prequisite Reading](#prereqs)<br>
+[Prerequisite Reading](#prereqs)<br>
 [Terminology](#terminology)<br>
-[Topics Covered](#topics)<br>
-[Basic Problem](#the-problem)<br>
+[About This Chapter](#about-chapter)<br>
+[Chapter Objectives](#objectives)<br>
+[The Basic Problem](#the-problem)<br>
 [Synchronization Mechanisms](#synchronization)<br>
 [Why is this an Operating System Topic?](#reason-we-study-synch)<br>
 [Example of a Race Condition](#race-cond-example)<br>
 [Producer and Consumer Code](#prod-cons-code)<br>
 [The Race Condition](#race-in-prod-cons)<br>
-[Race Conditions in the Kernal](#kernel-races)<br>
+[Race Conditions in the Kernel](#kernel-races)<br>
 [Preventing Race Conditions in the Kernel](#preventing-races)<br>
 [Preemptive Kernels](#preemptive-kernels)<br>
 [Re-entrant Kernels](#reentrant-kernels)<br>
@@ -67,10 +66,10 @@ name:toc
 [Algorithm 1](#algorithm-1)<br>
 [Algorithm 1](#algorithm-1-2)<br>
 [Satisfies Mutual Exclusion?](#alg1-mutex)<br>
-[Satisfies Progress?](#alg1-progress)<br>
 ---
 ### Table of Contents
 
+[Satisfies Progress?](#alg1-progress)<br>
 [Algorithm 2](#algorithm-2)<br>
 [Satisfies Mutual Exclusion?](#alg2-mutex)<br>
 [Satisfies Progress?](#alg2-progress)<br>
@@ -93,26 +92,18 @@ name:toc
 [The Test-and-Set Instruction](#test-and-set)<br>
 [Implementing Test-and-Set](#test-and-set-implementation)<br>
 [Using Test-and-Set for Critical Sections](#testset-cs)<br>
-[Compare-and-Swap Instruction](#cas)<br>
 ---
 ### Table of Contents
 
+[Compare-and-Swap Instruction](#cas)<br>
 [Implementing Test-and-Set With Compare-and-Swap](#cas-as-tas)<br>
 [Using Compare-and-Swap for Critical Sections](#cas-cs)<br>
+[Spinlocks](#spinlocks)<br>
 [Ensuring Bounded Waiting Using Locks](#cs-bounded-waiting)<br>
 [Why This Works](#cs-bounded-wait2)<br>
-[Why This Works](#cs-bounded-wait2-2)<br>
-[Why This Works](#cs-bounded-wait2-3)<br>
-[Why This Works](#cs-bounded-wait2-4)<br>
-[Why This Works](#cs-bounded-wait2-5)<br>
-[Why This Works](#cs-bounded-wait2-6)<br>
-[Why This Works](#cs-bounded-wait2-7)<br>
-[Why This Works](#cs-bounded-wait2-8)<br>
-[Why This Works](#cs-bounded-wait2-8)<br>
-[Why This Works](#cs-bounded-wait2-9)<br>
 [Atomic Variables](#atomic-vars)<br>
 [Implementing Atomic Variables](#atomic-vars-2)<br>
-[Implementing Atomic Incrrement](#atomic-inc)<br>
+[Implementing Atomic Increment](#atomic-inc)<br>
 [Mutex Locks](#mutex-locks)<br>
 [Mutex Lock Semantics](#mutex-lock-semantics)<br>
 [Using Mutex Locks for Critical Sections](#using-mutex-lock)<br>
@@ -120,9 +111,6 @@ name:toc
 [Semaphore Definition](#sem-def)<br>
 [Observations](#sem-observations-1)<br>
 [Observations](#sem-observations-2)<br>
----
-### Table of Contents
-
 [Binary Semaphores for Mutual Exclusion](#sem-cs)<br>
 [Bounded Waiting and Semaphores](#sem-cs-bounded-waiting)<br>
 [Counting Semaphores](#counting-sems)<br>
@@ -130,8 +118,11 @@ name:toc
 [Semaphores for Serializing](#sem-synching)<br>
 [Implementing Semaphores: Considerations](#sem-implementation)<br>
 [Semaphore Implementation](#sem-implementation-2)<br>
-[Implementing `wait()`](#wait-implementation)<br>
-[Implementing `signal()`](#signal-implementation)<br>
+---
+### Table of Contents
+
+[Implementing .fixedblue[wait()]](#wait-implementation)<br>
+[Implementing .fixedblue[signal()]](#signal-implementation)<br>
 [Liveness](#liveness)<br>
 [Deadlock](#liveness-deadlock)<br>
 [Priority Inversion](#liveness-priority-inversion)<br>
@@ -142,33 +133,47 @@ name:toc
 
 ---
 name: prereqs
-### Requisite Reading
+### Prerequisite Reading
 
-Before reading these slides, you should be familiar with
+Before reading these slides, you should be familiar with material
+from the following topics, best achieved by reading the indicated
+chapters from these lecture notes.
 
+- Computer organization ([Chapter 1](chapter01.html))
 
-.lightbluebox[
-- Computer organization
+- Operating system structure ([Chapter 2](chapter02.html))
 
-- Operating system structure
+- Processes and concurrency ([Chapter 3](chapter03.html))
 
-- Processes and concurrency
-]
 
 ---
 name: terminology
 ### Terminology
 
-In this slide set, we use the terms "process" and "thread" interchangeably.
+In this slide set, we  use the terms "process" and "thread" interchangeably,
+because the processes that we consider are all single-threaded.
 The reader should be aware that unrelated processes generally are not able
 to access shared variables, whereas threads generally can.
 
 In the slides, when we refer to processes that access shared variables, the
 reader can think of these as either threads, or as processes that have set up
 shared memory through an appropriate kernel API.
+
+Lastly, processes and threads _are not_ generally the same thing. We would
+use the term "task", as Linux does, to mean a process or a thread, but most
+people do not use "task" in this way and we do not want to muddy the waters
+even further. If we need to say something about processes that is not true of threads,
+or vice versa, we shall explicitly say so.
+
+
 ---
-name: topics
-### Topics Covered
+name: about-chapter
+### About This Chapter
+
+This chapter covers problems related to concurrent execution of processes
+and methods of solving those problems.
+
+The general topics that it explores are:
 
 .lightbluebox[
 - The Basic Problem
@@ -186,10 +191,35 @@ name: topics
 - Liveness
 ]
 
+---
+name: objectives
+### Chapter Objectives
+
+Having read and understood the content of this chapter, you should be able to
+
+- describe the critical-section problem and give an example of a race condition;
+
+--
+
+- describe various software solutions to the problem and explain their limitations;
+
+--
+
+- describe hardware solutions to the critical-section problem using
+memory barriers, compare-and-swap operations, test-and-set, and atomic variables;
+
+--
+
+- demonstrate how mutex locks and semaphores can be used to solve the critical section problem;
+
+--
+
+- describe various liveness properties and be able to determine whether concurrent
+process systems have those properties.
 
 ---
 name: the-problem
-### Basic Problem
+### The Basic Problem
 
 .big[What problem are we trying to solve?]
 
@@ -199,12 +229,12 @@ name: the-problem
 
 - Processes might modify shared data.
 
-- Concurrent modification of shared data may result in .redbold[data inconsistency]:
+- Concurrent modification of shared data may result in .bluebold[data inconsistency]:
 when two or more processes have different values of the same  data object,
 such as  a shared counter.
 
 - When the data inconsistency depends on the _order_ in which the processes
-modify the shared data, _and this is undesirable_, it is called a .redbold[race condition].
+modify the shared data, _and this is undesirable_, it is called a .bluebold[race condition].
 
 - Preventing race conditions requires .redbold[synchronization mechanisms] to ensure the controlled
   execution of cooperating processes.
@@ -215,6 +245,8 @@ name: synchronization
 
 People use the term “synchronization” to mean making two things happen at the
 same time.
+
+--
 
 In computer science, .bluebold[synchronization] is the control of the order
 of events in time.
@@ -234,14 +266,17 @@ in hardware, software, or a combination of both.
 ---
 name: reason-we-study-synch
 ### Why is this an Operating System Topic?
-- Modern operating systems are composed of cooperating processes and/or threads.
+
+Modern operating systems are composed of cooperating processes and/or threads.
 
 - These modify and access shared data such as tables that control memory allocation,
 file access, process creation, device management, and so on.
 
 - These accesses are potential race conditions that must be resolved.
 
-- Therefore to understand operating system design and function,
+--
+
+Therefore to understand operating system design and function,
 it is imperative to understand the different means of process synchronization with
 respect to shared resources.
 
@@ -267,8 +302,8 @@ in == out                      iff buffer is empty
 
 --
 
-- We can keep an integer `counter` that keeps track of the number of
-full buffers.  Initially, `counter == 0`.
+- We can keep an integer .fixedblue[counter] that keeps track of the number of
+full buffers.  Initially, .fixedblue[counter == 0].
 - It is incremented by the producer after it fills a buffer and is
 decremented by the consumer after it consumes (empties) a buffer.
 ---
@@ -308,22 +343,22 @@ Consumer:
 ---
 name: race-in-prod-cons
 ### The Race Condition
-- This code has a .redbold[race condition] on the `counter` variable. In the two highlighted
+- This code has a .redbold[race condition] on the .fixedblue[counter] variable. In the two highlighted
 lines
 
-  - `counter++` could be implemented with three machine instructions equivalent to
+  - .fixedblue[counter++] could be implemented with three machine instructions equivalent to
   ```
        register1 = counter
        register1 = register1 + 1
        counter   = register1
   ```
-  - `counter--` could be implemented with three machine instructions equivalent to
+  - .fixedblue[counter--] could be implemented with three machine instructions equivalent to
   ```
        register2 = counter
        register2 = register2 - 1
        counter   = register2
   ```
-  - Consider the execution sequence with `counter == 2` initially. `tk` denotes
+  - Consider the execution sequence with .fixedblue[counter == 2] initially. .fixedblue[tk] denotes
   the kth time step:
   ```
        t0: producer executes register1 = counter         {register1 == 2 }
@@ -333,11 +368,11 @@ lines
        t4: producer executes counter   = register1       {counter   == 3 }
        t5: consumer executes counter   = register2       {counter   == 1 }
   ```
-- If t4 and t5 are swapped, then the final value of `counter` is 3, not 1.
+- If t4 and t5 are swapped, then the final value of .fixedblue[counter] is 3, not 1.
 
 ---
 name: kernel-races
-### Race Conditions in the Kernal
+### Race Conditions in the Kernel
 
 - Race conditions can occur whenever shared variables are updated by two independent
 processes or threads.
@@ -345,7 +380,7 @@ processes or threads.
 - A Linux kernel would have many race conditions if it did not use
 mechanisms to prevent them. For example,
 
-   - In the implementation of the `fork()` system call, a new process id is assigned
+   - In the implementation of the .fixedblue[fork()] system call, a new process id is assigned
    to the newly created process.
 
    - This requires incrementing the variable that stores the next available process id value.
@@ -374,12 +409,12 @@ name: preventing-races
 
 - This would guarantee that only one process at a time could modify shared data.
 
-- On multi-processors, this does not suffice, because the shared data can be
+- On multiprocessors, this does not suffice, because the shared data can be
 modified by two different processes on separate cores.
 
 - Even on a single-processor machine with no hyper-threading, disabling interrupts
 is not an efficient solution for long sections of code, since  important events
-might need to be handled during the time spent in the CS.
+might need to be handled during the period for which interrupts are disabled.
 
 ---
 name: preemptive-kernels
@@ -431,7 +466,7 @@ name: cs-problem
 
   - requiring that, when one process is in its critical section, no other can be in its critical section.
 
--  The .redbold[Critical Section Problem] is to design protocol that all processes
+-  The .redbold[Critical Section Problem] is to design a protocol that all processes
 can use to coordinate their accesses to this critical section of code.
 
 - A solution requires that each process must
@@ -440,14 +475,14 @@ can use to coordinate their accesses to this critical section of code.
   1. execute the .redbold[critical section]
   1. execute an .redbold[exit section] in which it indicates that it
     exited its critical section, and
-  1. executes .redbold[non-critical section] code.
+  1. execute .redbold[non-critical section] code.
 
 
 ---
 name: process-form
 ### General Form of a Process
 
-- Since the goal is to find protocols to solve critical section problem, we represent
+- Since the goal is to find protocols to solve the critical section problem, we represent
 a process as doing nothing but repeatedly entering and exiting a critical section,
 and doing "other stuff" when it is not in its critical section.
 
@@ -475,18 +510,18 @@ name: cs-conditions
 .section[
 .bigger[Any solution to the problem must satisfy three criteria.]
 
-- .redbold[Mutual Exclusion]. If process Pi is executing in its critical section,
-then no other processes can be executing in their critical sections
+- .redbold[Mutual Exclusion]. If a process is executing in its critical section,
+then no other processes can be executing in their critical sections.
 
 - .redbold[Progress]. If no process is executing in its critical section and there exist
 some processes that wish to enter their critical section,
 then the selection of the processes that will enter the critical
-section next cannot be postponed indefinitely
+section next cannot be postponed indefinitely.
 
 - .redbold[Bounded Waiting].  A bound must exist on the number of times
 that other processes are allowed to enter their critical sections
 after a process has made a request to enter its critical section
-and before that request is granted
+and before that request is granted.
 ]
 
 ---
@@ -498,11 +533,11 @@ name: assumptions
 - We can assume that each process executes at a nonzero speed.
 
 - We can assume that machine instructions to fetch, store, and test values are
-atomic, i.e., uninterruptible.
+.bluebold[atomic], i.e., uninterruptible.
 
 - We can assume processes do not halt in their critical sections.
 
-- We __cannot assume__ that processes execute at any particuar relative speeds
+- We .bluebold[cannot assume] that processes execute at any particular relative speeds
 or that some processes have higher priorities than others.
 
 ]
@@ -527,12 +562,12 @@ layout: true
 name: algorithm-1
 ### Algorithm 1
 
-Assume that two processes, `P0` and `P1`, execute concurrently. They share a
-variable `turn`  set to 0 initially:
+Assume that two processes, .fixedblue[P0] and .fixedblue[P1], execute concurrently. They share a
+variable .fixedblue[turn]  set to 0 initially:
 ```C
   turn = 0;
 ```
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -544,8 +579,8 @@ variable `turn`  set to 0 initially:
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -557,26 +592,29 @@ variable `turn`  set to 0 initially:
        /* remainder section (NCS) */
    }
 ```
-]]
+]]]
 
-- Process P.sub[k]  (`k=0,1`) entry section is .redbold[ `wait until turn == k`].
-- Process P.sub[k]   (`k=0,1`) exit section is  .redbold[`turn = 1-k;` ].
+- Process P.sub[k]'s  (`k=0,1`) entry section is essentially of the form
+.redbold[.fixed[ wait until turn == k]].
+- Process P.sub[k]'s   (`k=0,1`) exit section is essentially of the form
+.redbold[.fixed[turn = 1-k; ]].
 (i.e., other process gets turn)
-- Implies P.sub[k]  is in CS only if `turn == k`.
-- Once  P.sub[k]  leaves CS, it sets `turn` so other process can enter.
-- Processes therefore .greenbold[_take turns_] in CS. (This is called .redbold[ alternation. ])
+- Implies P.sub[k]  is in CS only if .fixedblue[turn == k].
+- Once  P.sub[k]  leaves CS, it modifies .fixedblue[turn] so the other process can enter.
+- Processes therefore .greenbold[take turns] in CS. (This is called .bluebold[ alternation. ])
 
 
 ---
 name: algorithm-1-2
 ### Algorithm 1
 
-Assume that two processes, `P0` and `P1`, execute concurrently. They share a
-variable `turn`  set to 0 initially:
+Assume that two processes, .fixedblue[P0] and .fixedblue[P1], execute concurrently. They share a
+variable .fixedblue[turn]  set to 0 initially:
+
 ```C
   turn = 0;
 ```
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -588,8 +626,8 @@ variable `turn`  set to 0 initially:
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -601,9 +639,9 @@ variable `turn`  set to 0 initially:
        /* remainder section (NCS) */
    }
 ```
-]]
+]]]
 
-- Loops such as `while (turn != 1)` are called .bluebold[busy-waiting] loops.
+- Loops such as .fixedblue[while (turn != 1)] are called .bluebold[busy-waiting] loops.
 The process that executes them is very busy doing nothing other than testing
 the value of a variable, waiting for it to become a specific value.
 
@@ -618,7 +656,7 @@ name: alg1-mutex
 ### Satisfies Mutual Exclusion?
 
 
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -630,8 +668,8 @@ name: alg1-mutex
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -643,18 +681,18 @@ name: alg1-mutex
        /* remainder section (NCS) */
    }
 ```
-]]
+]]]
 
 - Yes.
 
 --
 
-- The variable .redbold[ `turn`] is shared.
-It can store either a `1` or a `0` at any
+- The variable  .fixedblue[turn] is shared.
+It can store either a .fixedblue[1] or a .fixedblue[0] at any
 time, not both.
 
-- Since `P0` is in CS only if .redbold[ `turn == 0`] and
-`P1` is in CS only if .redbold[ `turn == 1`],
+- Since .fixedblue[P0] is in CS only if .redbold[ .fixed[turn == 0]] and
+.fixedblue[P1] is in CS only if .redbold[ .fixed[turn == 1]],
 they cannot be in the CS at the same time.
 
 ---
@@ -662,7 +700,7 @@ name: alg1-progress
 ### Satisfies Progress?
 
 
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -674,8 +712,8 @@ name: alg1-progress
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -687,23 +725,20 @@ name: alg1-progress
        /* remainder section (NCS) */
    }
 ```
-]]
+]]]
 
 --
 
 - Consider this sequence:
-.blue[
-  `P0` enters CS, sets `turn` to 1, enters NCS and stays there a long time.
 
+  .fixedblue[P0] enters CS, sets .fixedblue[turn] to 1, enters NCS and stays there a long time.
 
-  `P1` enters CS because `turn` is 1, sets `turn` to 0, enters its NCS, goes back to
-  its entry section and waits for `turn` to become 1.
+  .fixedblue[P1] enters CS because .fixedblue[turn] is 1, sets .fixedblue[turn] to 0, enters its NCS, goes back to
+  its entry section and waits for .fixedblue[turn] to become 1.
 
+  But .fixedblue[turn] cannot become 1 until .fixedblue[P0] leaves its NCS, enters its CS again.
 
-  But `turn` cannot become 1 until `P0` leaves its NCS, enters its CS again.
-]
-
-- Progress is not satisfied  because a process that wants to enters its CS (`P1`) is blocked from
+- Progress is not satisfied  because a process that wants to enters its CS (.fixedblue[P1]) is blocked from
 getting in even though no other process is in its entry or exit sections or its
 CS.
 
@@ -712,15 +747,15 @@ CS.
 name: algorithm-2
 ### Algorithm 2
 
-- Assume two processes, `P0` and `P1`, execute concurrently
-- __Initialization__. A global array of two bools, initially both `false`:
+- Assume two processes, .fixedblue[P0] and .fixedblue[P1], execute concurrently
+- __Initialization__. A global array of two bools, initially both .fixedblue[false]:
   ```
      bool flag[2] = {false, false};
   ```
-- The variable .redbold[ `flag`]  should be named
-.redbold[`ready_to_enter_CS`] for clarity.
+- The variable .redbold[ .fixedblue[flag]]  should be named
+.redbold[.fixedblue[ready_to_enter_CS]] for clarity.
 
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -733,8 +768,8 @@ name: algorithm-2
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -747,12 +782,12 @@ name: algorithm-2
        /* remainder section (NCS)*/
    }
 ```
-]]
+]]]
 
 
-- When process P.sub[k]  (`k=0,1`) sets `flag[k] = true`,
+- When process P.sub[k]  (`k=0,1`) sets .fixedblue[flag[k] = true],
 it is saying, "I am ready to enter CS".
-- It then politely waits for other process with the following `while` loop -
+- It then politely waits for other process with the following .fixedblue[while] loop -
 if other process is ready to enter its CS, it waits.
 
 ---
@@ -760,7 +795,7 @@ name: alg2-mutex
 ### Satisfies Mutual Exclusion?
 
 
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -773,8 +808,8 @@ name: alg2-mutex
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -787,22 +822,22 @@ name: alg2-mutex
        /* remainder section (NCS)*/
    }
 ```
-]]
+]]]
 
 - Yes.
 
 --
 - A process enters its CS only if the other process is NOT ready to enter,
-e.g., process  P0 enters CS only if `flag[1]` is `false`. Both processes set
-their `flag` to true before testing each other's `flag` so both cannot be
-`false` at the top of the loop on each iteration.
+e.g., process  .fixedblue[P0] enters CS only if .fixedblue[flag[1]] is .fixedblue[false]. Both processes set
+their .fixedblue[flag] to true before testing each other's .fixedblue[flag] so both cannot be
+.fixedblue[false] at the top of the loop on each iteration.
 
 ---
 name: alg2-progress
 ### Satisfies Progress?
 
 
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -815,8 +850,8 @@ name: alg2-progress
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -829,12 +864,12 @@ name: alg2-progress
        /* remainder section (NCS)*/
    }
 ```
-]]
+]]]
 
 --
 
 - Consider this scenario:
-  - P0 sets `flag[0] = true` and  P1 sets `flag[1] = true` at the same time.
+  - .fixedblue[P0] sets .fixedblue[flag[0] = true] and  .fixedblue[P1] sets .fixedblue[flag[1] = true] at the same time.
   - Each now executes its respective while loop.
   - Because both are ready to enter CS, neither while loop is exited and both
     processes wait forever to enter the CS.
@@ -853,16 +888,16 @@ name: peterson-solution
 
 - Gary Peterson invented it in 1981<span class="super">1</span>.
 
-- This algorithm uses both variables, `flag[2]` and `turn` to solve the problem.
+- This algorithm uses both variables, .fixedblue[flag[2]] and .fixedblue[turn] to solve the problem.
 
 - The use of both prevents alternation and prevents deadlock.
 
 -  It assumes that the load and store machine-language instructions are atomic;
   that is, cannot be interrupted.
 
-- The variable turn indicates whose turn it is to enter the critical section.
-- The flag array is used to indicate if a process is ready to enter the critical section.
- `flag[k] = true`  implies that process Pk is ready.
+- The variable .fixedblue[turn] indicates whose turn it is to enter the critical section.
+- The .fixedblue[flag] array is used to indicate if a process is ready to enter the critical section.
+ .fixedblue[flag[k] = true]  implies that process P.sub[k] is ready.
 
 
 .footnote[
@@ -874,8 +909,8 @@ name: peterson-alg
 ### Peterson's Algorithm
 
 - A process gains entry to its CS if the other process is not ready to enter its CS
-(by setting its `flag`  to false) __or__ if the other process has given
-privilege to the process by setting `turn` to that process's id, e.g., `turn = 0`.
+(by setting its .fixedblue[flag]  to false) __or__ if the other process has given
+privilege to the process by setting .fixedblue[turn] to that process's id, e.g., .fixedblue[turn = 0].
 
 -  __Initialization__.
  ```C
@@ -884,7 +919,7 @@ privilege to the process by setting `turn` to that process's id, e.g., `turn = 0
 
  ```
 
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -898,8 +933,8 @@ privilege to the process by setting `turn` to that process's id, e.g., `turn = 0
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -913,7 +948,7 @@ privilege to the process by setting `turn` to that process's id, e.g., `turn = 0
        /* remainder section (NCS)*/
    }
 ```
-]]
+]]]
 
 
 
@@ -921,7 +956,7 @@ privilege to the process by setting `turn` to that process's id, e.g., `turn = 0
 name: peterson-mutex
 ### Satisfies Mutual Exclusion?
 
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -935,8 +970,8 @@ name: peterson-mutex
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -950,30 +985,30 @@ name: peterson-mutex
        /* remainder section (NCS)*/
    }
 ```
-]]
+]]]
 
 
-- If P0 is in its CS, then it set `flag[0]` to true. (Only sets it to false
+- If .fixedblue[P0] is in its CS, then it set .fixedblue[flag[0]] to true. (Only sets it to false
  when it leaves, and then it gets set to true again after the NCS.)
-- The same is true of P1: if P1 is in its CS, it set `flag[1]` to true and has not yet
+- The same is true of .fixedblue[P1]: if .fixedblue[P1] is in its CS, it set .fixedblue[flag[1]] to true and has not yet
  set it to false again. Therefore, if both are in their CS, then
 
-  `flag[0] == flag[1] == true`.
+  .fixedblue[flag[0] == flag[1] == true].
 
 --
-- To enter its CS, when P0 evaluated its condition either `flag[1] == false` or `turn == 0`.
+- To enter its CS, when .fixedblue[P0] evaluated its condition either .fixedblue[flag[1] == false] or .fixedblue[turn == 0].
 
 --
-- Since both `flag` values are true, a process can only exit the .greenbold[busy-waiting]
-loop if `turn` is the value that makes it false - for P0, `turn == 0`,
-for P1, `turn == 1`.  But `turn` cannot be both 0 and 1 simultaneously.
+- Since both .fixedblue[flag] values are true, a process can only exit the .greenbold[busy-waiting]
+loop if .fixedblue[turn] is the value that makes it false - for .fixedblue[P0], .fixedblue[turn == 0],
+for .fixedblue[P1], .fixedblue[turn == 1].  But .fixedblue[turn] cannot be both 0 and 1 simultaneously.
 Mutual exclusion is therefore satisfied.
 
 ---
 name: peterson-progress
 ### Satisfies Progress?
 
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -987,8 +1022,8 @@ name: peterson-progress
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -1002,14 +1037,14 @@ name: peterson-progress
        /* remainder section (NCS)*/
    }
 ```
-]]
+]]]
 
 
 - The only way that a process trying to gain access to the CS would be denied
 access is if it is busy-waiting in its while loop.
 
-- If neither is making progress, it implies that `turn == 1` and `turn == 0`
-simultaneously.
+- If neither is making progress, it implies that .fixedblue[turn == 1]
+and .fixedblue[turn == 0] simultaneously.
 
 - Progress is easily seen to be satisfied.
 
@@ -1018,7 +1053,7 @@ simultaneously.
 name: peterson-bound-wait
 ### Satisfies Bounded Waiting?
 
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -1032,8 +1067,8 @@ name: peterson-bound-wait
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -1047,13 +1082,12 @@ name: peterson-bound-wait
        /* remainder section (NCS)*/
    }
 ```
-]]
-
+]]]
 
 - If a process is busy waiting in its while loop, and the other is not
-in its CS, then either it is in its NCS and its `flag` is false, in which
+in its CS, then either it is in its NCS and its .fixedblue[flag] is false, in which
 case the waiting process will enter after waiting for at most one other process,
-or the other process re-entered its entry section, and will set `turn` to the value
+or the other process re-entered its entry section, and will set .fixedblue[turn] to the value
 that will allow the waiting process to enter, so again the waiting process will
 not wait for more than one other process.
 
@@ -1075,13 +1109,13 @@ compilers and processors can perform.
   - For single-threaded applications, it is safe because it does not change result
     of a computation.
 
-  - For multi-threaded applications, re-ordering can cause different results.
+  - For multithreaded applications, re-ordering can cause different results.
 
 ---
 name: instruct-reorder
 ### Effects of Instruction Re-ordering
 
-- Suppose two threads share two variables `flag` and `count`, initialized as
+- Suppose two threads share two variables .fixedblue[flag] and .fixedblue[count], initialized as
 ```C
        boolean flag = false;
        int     count = 0;
@@ -1116,8 +1150,8 @@ name: instruct-reorder
 --
 
 - If the compiler does not re-order any instructions, and the processors do not
-re-order instructions, then clearly the value of `count` to be printed will be
-`10` because Thread0 does not print until `flag` is true.
+re-order instructions, then clearly the value of .fixedblue[count] to be printed will be
+.fixedblue[10] because Thread0 does not print until .fixedblue[flag] is true.
 
 --
 
@@ -1148,11 +1182,11 @@ name: instruct-reorder-effects
 
 --
 .below-column[
-then the output might be 0 because Thread0 may print before `count` is
+then the output might be 0 because Thread0 may print before .fixedblue[count] is
 updated.
 ]
 
-- Re-ordering multi-threaded applications has risk!
+- Re-ordering multithreaded applications has risk!
 
 - Is Peterson's algorithm safe if instructions are re-ordered?
 
@@ -1165,7 +1199,7 @@ name: peterson-reordered
 ### Peterson's Algorithm Re-ordered
 
 - Suppose the two instructions in the entry section of P0 are re-ordered:
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
 P0:
    while (true)  {
@@ -1177,8 +1211,8 @@ P0:
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
 P1:
    while (true)  {
@@ -1190,18 +1224,18 @@ P1:
        /* remainder section (NCS)*/
    }
 ```
-]]
+]]]
 .below-column[
-Consider this execution sequence (remember `flag[0] == flag[1] == false` initially):
+Consider this execution sequence (remember .fixedblue[flag[0] == flag[1] == false] initially):
 ```
-    P0: turn = 1;
-    P1: turn = 0;
-    P1: flag[1] = true;
-    P1: eval (flag[0] == true && turn == 0)
-    P1: enter CS  /* because flag[0] == false */
-    P0: flag[0] = true;
-    P0: eval (flag[1] == true && turn == 1)
-    P0: enter CS  /* because turn == 0 */  /* P0 and P1 IN CS !!! */
+P0: turn = 1;
+P1: flag[1] = true;
+P1: turn = 0;
+P1: eval (flag[0] == true && turn == 0)
+P1: enter CS  /* because flag[0] == false */
+P0: flag[0] = true;
+P0: eval (flag[1] == true && turn == 1)
+P0: enter CS  /* because turn == 0 */  /* P0 and P1 IN CS !!! */
 ```
   showing that it fails if compilers or processors re-order instructions.
 ]
@@ -1229,7 +1263,7 @@ affects the processor or the compiler depends on the type of barrier.
 name: memory-models
 ### Memory Models
 
-- In general on a multi-processor with separate caches for each core, the order of loads
+- In general on a multiprocessor with separate caches for each core, the order of loads
 and stores seen by each core are not guaranteed to be the same, and there
 are several different abstract models of what orderings are possible.
 
@@ -1249,31 +1283,31 @@ name: mem-barrier-example
 ### Example
 
 - The preceding example can be modified by inserting a memory barrier that forces
-the memory accesses to `flag` and `count` to occur in their respective threads
+the memory accesses to .fixedblue[flag] and .fixedblue[count] to occur in their respective threads
 as written:
 
-  .left-column[.left[
+  .left-column[.left[.smaller[
   ```C
      Thread0:
          while (! flag) ;
          membarrier(MEMBARRIER_CMD_GLOBAL, 0);
          print count;
   ```
-  ]]
-  .right-column[.left[
+  ]]]
+  .right-column[.left[.smaller[
   ```C
      Thread1:
          count = 10;
          membarrier(MEMBARRIER_CMD_GLOBAL, 0);
          flag  = true;
    ```
-  ]]
+  ]]]
 
 --
 .below-column[
 The memory barrier above is a Linux hardware barrier that will force
-the load into `count` to be visible in Thread0 before the assignment
-to `flag` of true.
+the load into .fixedblue[count] to be visible in Thread0 before the assignment
+to .fixedblue[flag] of true.
 ]
 
 ---
@@ -1284,7 +1318,7 @@ name: peterson-revisited
 reordering. The code below uses a different type of barrier.
 
 
-.left-column[.left[
+.left-column[.left[.smaller[
 ```C
    P0:
    while (true)  {
@@ -1299,8 +1333,8 @@ reordering. The code below uses a different type of barrier.
        /* remainder section (NCS)*/
    }
 ```
-]]
-.right-column[.left[
+]]]
+.right-column[.left[.smaller[
 ```C
    P1:
    while (true)  {
@@ -1315,7 +1349,7 @@ reordering. The code below uses a different type of barrier.
        /* remainder section (NCS)*/
    }
 ```
-]]
+]]]
 ---
 template: default
 layout: true
@@ -1429,24 +1463,24 @@ The test-and-set assembly instruction can be implemented easily with a bus lock.
 
 The implementation is both compiler and machine dependent.
 
-For example, the GNU equivalent, named `__sync_lock_test_and_set`, is implemented on an x86
-architecture using the `xchg` opcode, which by default locks the bus.
+For example, the GNU equivalent, named .fixedblue[__sync_lock_test_and_set], is implemented on an x86
+architecture using the .fixedblue[xchg] opcode, which by default locks the bus.
 
-- The machine instruction `xchg` exchanges a register with a memory location
+- The machine instruction .fixedblue[xchg] exchanges a register with a memory location
 atomically.
 
-- `test_and_set(&lock)`  is the same as exchanging a 1 stored in a
-register with the memory location referenced by `lock`. The old value of `lock`
-is safely in a register and can be returned, and the `lock` is now set to 1 (`true`).
+- .fixedblue[test_and_set(&lock)]  is the same as exchanging a 1 stored in a
+register with the memory location referenced by .fixedblue[lock]. The old value of .fixedblue[lock]
+is safely in a register and can be returned, and the .fixedblue[lock] is now set to 1 (.fixedblue[true]).
 
 
 ---
 name: testset-cs
 ### Using Test-and-Set for Critical Sections
 
-We can use a busy-waiting loop with the `test_and_set` instruction to protect
-critical section access. Assume that `lock` is a boolean variable that is initially
-`false`. Each process executes code of the form
+We can use a busy-waiting loop with the .fixedblue[test_and_set] instruction to protect
+critical section access. Assume that .fixedblue[lock] is a boolean variable that is initially
+.fixedblue[false]. Each process executes code of the form
 .centered_80[
 ```C
 
@@ -1464,12 +1498,12 @@ critical section access. Assume that `lock` is a boolean variable that is initia
 - It is not hard to see that mutual exclusion is guaranteed by the fact that only
 one process can get through the while loop at a time.
 
-- Progress is guaranteed because whenever a process leaves the CS, it sets `lock`
-to false, forcing `test_and_set(&lock)` to return `false` for some process, which
+- Progress is guaranteed because whenever a process leaves the CS, it sets .fixedblue[lock]
+to false, forcing .fixedblue[test_and_set(&lock)] to return .fixedblue[false] for some process, which
 then enters its CS.
 
 - Bounded waiting is not guaranteed: it is possible for a process to wait indefinitely
-for its call to `test_and_set(&lock)` to return `false` just because of "bad timing".
+for its call to .fixedblue[test_and_set(&lock)] to return .fixedblue[false] just because of "bad timing".
 
 ---
 name: cas
@@ -1501,15 +1535,15 @@ or, looked at through its operational semantics,
 ```
 ]
 
-In short, `compare_and_swap(a,b,c)` atomically returns the original value of `a` and
-replaces it with `c` if and only if `a==b`.
+In short, .fixedblue[compare_and_swap(a,b,c)] atomically returns the original value of .fixedblue[a] and
+replaces it with .fixedblue[c] if and only if .fixedblue[a==b].
 
 ---
 name: cas-as-tas
 ### Implementing Test-and-Set With Compare-and-Swap
 
-If the hardware provides a `compare_and_swap` instruction, then it can be used to
-implement the `test_and_set` instruction, treating 0 as false and 1 as true.
+If the hardware provides a .fixedblue[compare_and_swap] instruction, then it can be used to
+implement the .fixedblue[test_and_set] instruction, treating 0 as false and 1 as true.
 The following two instructions are operationally equivalent:
 .centered_80[
 ```C
@@ -1518,18 +1552,18 @@ The following two instructions are operationally equivalent:
 ```
 ]
 
-Both set `lock` to 1 if it is not already set to 1, and return the current value of
-`lock`.
+Both set .fixedblue[lock] to 1 if it is not already set to 1, and return the current value of
+.fixedblue[lock].
 
 ---
 name: cas-cs
 ### Using Compare-and-Swap for Critical Sections
 
-Since we can implement `test_and_set` using `compare_and_swap`, we can replace it
+Since we can implement .fixedblue[test_and_set] using .fixedblue[compare_and_swap], we can replace it
 in the  busy-waiting loop of [Using Test-and-Set for Critical Sections](#testset-cs)
-with `compare_and_swap`  to protect critical section access.
+with .fixedblue[compare_and_swap]  to protect critical section access.
 
-Assume that `lock` is a integer variable that is
+Assume that .fixedblue[lock] is a integer variable that is
 initially 0. Each process executes code of the form
 .centered_80[
 ```C
@@ -1544,12 +1578,32 @@ initially 0. Each process executes code of the form
 ]
 
 --
-The same arguments apply here as applied to the code using `test_and_set`:
+The same arguments apply here as applied to the code using .fixedblue[test_and_set]:
 - Mutual exclusion is guaranteed;
 
 - The progress condition is satisfied;
 
 - .redbold[Bounded waiting is not satisfied.]
+
+---
+name: spinlocks
+### Spinlocks
+
+Locks that use busy-waiting loops such as those just shown, using either 
+test-and-set or compare-and-swap:
+
+.centered_80[
+```C
+       while ( compare_and_swap(&lock,0,1) ) ; // ENTRY SECTION
+       /* CS */
+       lock = 0; // EXIT SECTION
+```
+]
+
+are called .bluebold[spinlocks].
+
+A spinlock is any locking primitive in which a process executes repeatedly on a
+processor until it acquires the lock.
 
 ---
 name: cs-bounded-waiting
@@ -1594,15 +1648,16 @@ Consider the entry section:
         waiting[i] = false;             // I am in
 ```
 
-- A process can only enter its CS if either the lock is 0 when `compare_and_set`
-is executed, or `waiting[i]` has been set to false by the process just leaving
+- A process can only enter its CS if either the lock is 0 when .fixedblue[compare_and_set]
+is executed, or .fixedblue[waiting[i]] has been set to false by the process just leaving
 its CS.
 
-- Initially `lock == 0` and exactly one process enters its CS, because
-`compare_and_set(&lock,0,1))` sets `lock` to 1.
+- Initially .fixedblue[lock == 0] and exactly one process enters its CS, because
+.fixedblue[compare_and_set(&lock,0,1))] sets .fixedblue[lock] to 1.
 
 ---
 name: cs-bounded-wait2-2
+count: false
 ### Why This Works
 Consider the entry section:
 
@@ -1614,17 +1669,19 @@ Consider the entry section:
         waiting[i] = false;             // I am in
 ```
 
-- A process can only enter its CS if either the lock is 0 when `compare_and_set`
-is executed, or `waiting[i]` has been set to false by the process just leaving
+- A process can only enter its CS if either the lock is 0 when .fixedblue[compare_and_set]
+is executed, or .fixedblue[waiting[i]] has been set to false by the process just leaving
 its CS.
 
-- Initially `lock == 0` and exactly one process enters its CS, because
-`compare_and_set(&lock,0,1))` sets `lock` to 1.
+- Initially .fixedblue[lock == 0] and exactly one process enters its CS, because
+.fixedblue[compare_and_set(&lock,0,1))] sets
+.fixedblue[lock] to 1.
 
-- After that, the only way that `lock` becomes 0 is if the process exiting
+- After that, the only way that .fixedblue[lock] becomes 0 is if the process exiting
 its CS sets it to 0.
 ---
 name: cs-bounded-wait2-3
+count: false
 ### Why This Works
 Consider the exit section:
 
@@ -1640,13 +1697,14 @@ Consider the exit section:
 ```
 
 - The process exiting its CS either
-sets `lock` to 0 or it sets `waiting[j]` to false, but not both.
-So it is not possible for one process to enter because it sees `lock == 0`
-and for another to enter because its `waiting[j]` has become false.
+sets .fixedblue[lock] to 0 or it sets .fixedblue[waiting[j]] to false, but not both.
+So it is not possible for one process to enter because it sees .fixedblue[lock == 0]
+and for another to enter because its .fixedblue[waiting[j]] has become false.
 - Therefore, .bluebold[mutual exclusion is satisfied.]
 
 ---
 name: cs-bounded-wait2-4
+count: false
 ### Why This Works
 Consider the exit section:
 
@@ -1661,13 +1719,14 @@ Consider the exit section:
         /* remainder section */
 ```
 
-- Suppose that `i` is the id of the process that just left its CS.
+- Suppose that .fixedblue[i] is the id of the process that just left its CS.
 If every process is in its remainder section, then, in the highlighted loop,
-`waiting[j] == false` for all `j` and eventually `j` becomes equal to `i`.
-In this case  process `i` will set `lock = 0`.
+.fixedblue[waiting[j] == false] for all .fixedblue[j] and eventually .fixedblue[j] becomes equal to .fixedblue[i].
+In this case  process .fixedblue[i] will set .fixedblue[lock = 0].
 
 ---
 name: cs-bounded-wait2-5
+count: false
 ### Why This Works
 Consider the exit section:
 
@@ -1682,14 +1741,15 @@ Consider the exit section:
         /* remainder section */
 ```
 
-- But if a process `j` is waiting to enter its CS, then `waiting[j] == true`
+- But if a process .fixedblue[j] is waiting to enter its CS, then .fixedblue[waiting[j] == true]
 and so if any processes are waiting to enter their CS's, then the loop exits
-and `j` is the id of a process that is waiting. In this case, process `i` sets
-`waiting[j] = false` and that process gains access to its CS.
+and .fixedblue[j] is the id of a process that is waiting. In this case, process .fixedblue[i] sets
+.fixedblue[waiting[j] = false] and that process gains access to its CS.
 - This proves that .bluebold[progress is satisfied.]
 
 ---
 name: cs-bounded-wait2-6
+count: false
 ### Why This Works
 Is .bluebold[bounded waiting] satisfied?
 
@@ -1703,17 +1763,18 @@ Is .bluebold[bounded waiting] satisfied?
             waiting[j] = false;  // free waiting process j from its loop
         /* remainder section */
 ```
-- We claim that, if a process is waiting to enter its CS, at most `n-1` processes
+- We claim that, if a process is waiting to enter its CS, at most $n-1$ processes
 will enter their CS's before it.
-- .greenbold[Suppose this were false]. Then for some process `k` trying to enter its
-CS, there are at least `n`  processes that enter their CS's before `k`.
-Since there are only `n-1` processes besides `k`,
-.greenbold[one of these must enter its CS twice before `k`.]
+- .greenbold[Suppose this were false]. Then for some process $k$ trying to enter its
+CS, there are at least $n$  processes that enter their CS's before $k$.
+Since there are only $n-1$ processes besides $k$,
+.greenbold[one of these must enter its CS twice before $k$.]
 
 - We show this is not possible.
 
 ---
 name: cs-bounded-wait2-7
+count: false
 ### Why This Works
 Is .bluebold[bounded waiting] satisfied?
 
@@ -1727,86 +1788,89 @@ Is .bluebold[bounded waiting] satisfied?
             waiting[j] = false;  // free waiting process j from its loop
         /* remainder section */
 ```
-- Notice that the highlighted loop tests each `j` from `j == (i + 1) %n`
-up to `j == n - 1`
-and then from `j == 0` up to `j == (i - 1) %n` until it finds one that is waiting
+- Notice that the highlighted loop tests each $j$ from $j == (i + 1) %n$
+up to $j == n - 1$
+and then from $j == 0$ up to $j == (i - 1) %n$ until it finds one that is waiting
 to enter its CS.
 
 - The loop therefore examines all processes  with respect
-to `i`, in ascending order of their rank, defined by the function
-`rank`.sub[`i`]`(j) = (j-i) % n`.
+to $i$, in ascending order of their rank, defined by the function
+$\text{rank}$.sub[$i$]$(j) = (j-i) % n$.
 
-- It is not hard to see that `rank`.sub[`i`]`(j)` is strictly increasing from `1` to `n-i-1`
-as `j` goes from `i+1` to `n-1` and then as `j` goes from `0`, `1`, `2`, to `i-1`,
-`rank`.sub[`i`]`(j)` continues to `n-i`, `n-i+1`, `n-i+2`,..., `n-1`.
+- It is not hard to see that $\text{rank}$.sub[$i$]$(j)$ is strictly increasing from $1$ to $n-i-1$
+as $j$ goes from $i+1$ to $n-1$ and then as $j$ goes from $0$, $1$, $2$, to $i-1$,
+$\text{rank}$.sub[$i$]$(j)$ continues to $n-i$, $n-i+1$, $n-i+2$,..., $n-1$.
 
 
 ---
 name: cs-bounded-wait2-8
+count: false
 ### Why This Works
 Is .bluebold[bounded waiting] satisfied?
 
 .center[
-    <img src="figures/bounded-waiting.png" width=60% alt="Buffer Pool"/>
+    <img src="figures/bounded-waiting.png" width=50% alt="Buffer Pool"/>
 ]
 
-- Suppose that `k` is a process that is waiting to enter its CS, and that
-`i` is a process that will have entered its CS twice before `k`.
+- Suppose that $k$ is a process that is waiting to enter its CS, and that
+$i$ is a process that will have entered its CS twice before $k$.
 
-- Consider the first time that `i` enters its CS and exits. When it exits,
-the processes are all ranked with respect to `i`. In particular, the rank of `k`
- is `rank`.sub[`i`]`(k) <= n-1`. <!-- -->
+- Consider the first time that $i$ enters its CS and exits. When it exits,
+the processes are all ranked with respect to $i$. In particular, the rank of $k$
+ is $\text{rank}$.sub[$i$]$(k) \le n-1$ <!-- -->
 
 - The figure above depicts this scenario.
 Each entry of the array is a process, and the ones colored
 blue are those that are waiting, and the white ones are not waiting.
-Process `k` is shown to the left of `i` arbitrarily. Its rank with
-respect to `i` is `rank`.sub[`i`]`(k)`.
+Process $k$ is shown to the left of $i$ arbitrarily. Its rank with
+respect to $i$ is $\text{rank}$.sub[$i$]$(k)$.
 
 
 ---
 name: cs-bounded-wait2-8
+count: false
 ### Why This Works
 Is .bluebold[bounded waiting] satisfied?
 
 .center[
-    <img src="figures/bounded-waiting.png" width=60% alt="Buffer Pool"/>
+    <img src="figures/bounded-waiting.png" width=50% alt="Buffer Pool"/>
 ]
 
 - When a process exits its CS, the next process to enter its CS is the
-one whose rank is least that is colored blue. In the figure, `j` is such a
+one whose rank is least that is colored blue. In the figure, $j$ is such a
 process and it enters its CS next.
 
 
 ---
 name: cs-bounded-wait2-9
+count: false
 ### Why This Works
 Is .bluebold[bounded waiting] satisfied?
 
 .center[
-    <img src="figures/bounded-waiting2.png" width=60% alt="Buffer Pool"/>
+    <img src="figures/bounded-waiting2.png" width=50% alt="Buffer Pool"/>
 ]
 
-- Suppose `i` immediately re-entered its entry section and is now  waiting.
+- Suppose $i$ immediately re-entered its entry section and is now  waiting.
 
 --
 
-- When  process `j` exits its CS and executes its exit section, all processes
-have ranks with respect to `j`, and all blue processes whose ranks with respect to `i`
-were at most `n-1` now have ranks with respect to `j` strictly less than `i`.
+- When  process $j$ exits its CS and executes its exit section, all processes
+have ranks with respect to $j$, and all blue processes whose ranks with respect to $i$
+were at most $n-1$ now have ranks with respect to $j$ strictly less than $i$.
 In particular,
-`rank`.sub[`j`]`(k)` < <!-- --> `rank`.sub[`j`]`(i)`.
+$\text{rank}$.sub[$j$]$(k)$ < <!-- --> $\text{rank}$.sub[$j$]$(i)$.
 
 --
 
-- This is true for any pair of `i` and `j` for which `i` just exited its CS and
-`j` is the next to enter its CS. This means that the rank of `k` will always be
-less than the rank of `i` with respect to the process that just exited its CS
-as long as `k` remains blue (i.e., is waiting).
+- This is true for any pair of $i$ and $j$ for which $i$ just exited its CS and
+$j$ is the next to enter its CS. This means that the rank of $k$ will always be
+less than the rank of $i$ with respect to the process that just exited its CS
+as long as $k$ remains blue (i.e., is waiting).
 
 --
 
-- Therefore it is not possible for `i` to enter its CS before `k` does, which
+- Therefore it is not possible for $i$ to enter its CS before $k$ does, which
 contradicts the initial supposition in the [earlier slide](#cs-bounded-wait2-6)
  and therefore .bluebold[bounded waiting is satisfied.]
 
@@ -1814,12 +1878,12 @@ contradicts the initial supposition in the [earlier slide](#cs-bounded-wait2-6)
 name: atomic-vars
 ### Atomic Variables
 
-An instruction such as `n = n+ 1` or even `n++` is not guaranteed to be
+An instruction such as .fixedblue[n = n+1] or even .fixedblue[n++] is not guaranteed to be
 compiled by a C or C++ compiler into a single atomic instruction.
 
 Therefore, some operating system kernels, such as the Linux kernel,
-provide a special `atomic_t` type and  special functions  that act on
-`atomic_t` variables and are implemented as single, atomic assembly language
+provide a special .fixedblue[atomic_t] type and  special functions  that act on
+.fixedblue[atomic_t] variables and are implemented as single, atomic assembly language
 instructions.
 (On multiprocessor systems, each such instruction is prefixed by a lock byte.)
 
@@ -1828,16 +1892,16 @@ Some  of the kernel's atomic functions are in the table below.
 |          |             |
 |:---      |:---         |
 | __Function__ | __Description__ |
-| `atomic_read(v)` | Return `*v` |
-| `atomic_set(v,i)` | Set *v to i |
-| `atomic_add(i,v)` | Add `i` to `*v` |
-| `atomic_sub(i,v)` | Subtract `i` from `*v` |
-| `atomic_sub_and_test(i, v)` | Subtract `i` from `*v` and return 1 if  result is 0; 0 otherwise |
-| `atomic_inc(v)` | Add 1 to `*v` |
-| `atomic_dec(v)` | Subtract 1 from `*v` |
-| `atomic_dec_and_test(v)` | Subtract 1 from `*v` and return 1 if  result is 0; 0 otherwise |
-| `atomic_inc_and_test(v)` | Add 1 to `*v` and return 1 if  result is zero; 0 otherwise |
-| `atomic_add_negative(i, v)` | Add i to `*v` and return 1 if  result is negative; 0 otherwise |
+| .fixedblue[atomic_read(v)] | Return `*v` |
+| .fixedblue[atomic_set(v,i)] | Set *v to i |
+| .fixedblue[atomic_add(i,v)] | Add `i` to `*v` |
+| .fixedblue[atomic_sub(i,v)] | Subtract `i` from `*v` |
+| .fixedblue[atomic_sub_and_test(i, v)] | Subtract `i` from `*v` and return 1 if  result is 0; 0 otherwise |
+| .fixedblue[atomic_inc(v)] | Add 1 to `*v` |
+| .fixedblue[atomic_dec(v)] | Subtract 1 from `*v` |
+| .fixedblue[atomic_dec_and_test(v)] | Subtract 1 from `*v` and return 1 if  result is 0; 0 otherwise |
+| .fixedblue[atomic_inc_and_test(v)] | Add 1 to `*v` and return 1 if  result is zero; 0 otherwise |
+| .fixedblue[atomic_add_negative(i, v)] | Add i to `*v` and return 1 if  result is negative; 0 otherwise |
 
 ---
 name: atomic-vars-2
@@ -1861,8 +1925,8 @@ name: atomic-inc
 ### Implementing Atomic Increment
 
 The function below implements an atomic .redbold[increment] operation using the GNU
-library's compare-and-swap function, named `__sync_val_compare_and_swap`.
-It requires including the header file `stdatomic.h`.
+library's compare-and-swap function, named .fixedblue[__sync_val_compare_and_swap].
+It requires including the header file .fixedblue[stdatomic.h].
 
 ```C
 #include <stdatomic.h>
@@ -1877,10 +1941,11 @@ void increment(int *v)
 	while (temp != (__sync_val_compare_and_swap(v,temp,temp+1)));
 }
 ```
-The reason the function needs to _repeatedly try_ to replace `v`, its parameter, with `v+1`
-is that between the time `*v` is copied to `temp` and the time the compare-and-swap
-takes place, `*v` might be changed by a different CPU, and so `temp+1` will
-no longer be an increment of the correct value of `*v`. Only when `temp == *v` will
+The reason the function needs to _repeatedly try_ to replace .fixedblue[v],
+its parameter, with .fixedblue[v+1]
+is that between the time .fixedblue[*v] is copied to .fixedblue[temp] and the time the compare-and-swap
+takes place, .fixedblue[*v] might be changed by a different CPU, and so .fixedblue[temp+1] will
+no longer be an increment of the correct value of .fixedblue[*v]. Only when .fixedblue[temp == *v] will
 it be correct.
 
 ---
@@ -1898,28 +1963,30 @@ tools.
 The simplest of these is the .greenbold[mutex lock].super[1].
 
 A mutex lock is an object with a hidden boolean variable and two public functions,
-`acquire()` and `release()`.  Suppose the boolean variable is named `available`.
+.fixedblue[acquire()] and .fixedblue[release()].  Suppose the boolean variable is named .fixedblue[available].
 
-- We think of `available` as indicating whether the lock is free
+- We think of .fixedblue[available] as indicating whether the lock is free
 for a process to acquire.
 
-- Initially `available == true`.
+- Initially .fixedblue[available == true].
 
-- A call to `acquire()` attempts to acquire the lock. If `available` is true,
-the call sets `available` to false and returns control to the caller atomically.
-The call does not return until `available` is true.
+- A call to .fixedblue[acquire()] attempts to acquire the lock. If .fixedblue[available] is true,
+the call sets .fixedblue[available] to false and returns control to the caller atomically.
+The call does not return until .fixedblue[available] is true.
 
-- A call to `release()` sets `available` to true and returns immediately.
+- A call to .fixedblue[release()] sets .fixedblue[available] to true and returns immediately.
 
 
 
 .footnote[
-1 "mutex" is a portmanteau created from "mutual" and "exclusion". ]
+1 "mutex" is a portmanteau created from "mutual" and "exclusion".
+]
+
 ---
 name: mutex-lock-semantics
 ### Mutex Lock Semantics
 
-The logic of the `acquire()` and `release()` functions is expressed
+The logic of the .fixedblue[acquire()] and .fixedblue[release()] functions is expressed
 below using C code:
 
 .left-column[.left[
@@ -1945,14 +2012,17 @@ below using C code:
 ]]
 
 .below-column[
-Notice that the `acquire()` function has a while-loop that the calling process
-enters and stays in until .greenbold[some other process]  sets `available` to true.
+Notice that the .fixedblue[acquire()] function has a while-loop that the calling process
+enters and stays in until .greenbold[some other process]  sets .fixedblue[available] to true.
 
 This is yet again a .greenbold[busy-waiting] loop.
 
-Mutex locks are called .greenbold[spinlocks] because they cause the
+Mutex locks as described here are  .greenbold[spinlocks] because they cause the
 process trying to acquire the lock to "spin" around in the CPU.
-
+.redbold[
+If a mutex were to be implemented by blocking the calling process instead, it would
+not be a spinlock.
+]
 ]
 
 ---
@@ -2001,7 +2071,7 @@ layout: true
 
 ---
 name: semaphore-intro
-background-image: url(figures/semaphores.jpg)
+background-image: url(figures/semaphores.png)
 class: center, middle
 # Semaphores
 
@@ -2017,11 +2087,12 @@ layout: true
 name: sem-origins
 ### Semaphore Origins
 
-In ordinary usage, .bluebold[semaphores] refer to a kind of signalling system,
+In ordinary usage, .bluebold[semaphores] refer to a kind of signaling system,
 such as the flags or lights used on ships, to communicate visually.
 
 In computer science, a .bluebold[semaphore] is a data structure, or an object, that can be used to
 solve several different types of synchronization problems.
+It is often used as a type of signaling mechanism.
 
 Semaphores were invented by Edsger Dijkstra in 1965.super[1] to solve some of the
 synchronization problems that arose while he was working on
@@ -2036,25 +2107,25 @@ University, Eindhoven, The Netherlands. 1965.
 name: sem-def
 ### Semaphore Definition
 
-A .bluebold[semaphore] `S` is an integer variable together with three .redbold[atomic] operations that
+A .bluebold[semaphore] .fixedblue[S] is an integer variable together with three .redbold[atomic] operations that
 are defined on it. We use an object-oriented syntax to describe it.
-- `S.initialize(unsigned integer c)` <br>Initialize the semaphore `S`
-to the .redbold[non-negative] integer value `c`. Although `S` can store any integer
+- .fixedblue[S.initialize(unsigned integer c)] <br>Initialize the semaphore .fixedblue[S]
+to the .redbold[non-negative] integer value .fixedblue[c]. Although .fixedblue[S] can store any integer
 value, it cannot be initialized with a negative one.
 
-- `S.wait()` <br>The semaphore `S` is decremented. If the resulting
+- .fixedblue[S.wait()] <br>The semaphore .fixedblue[S] is decremented. If the resulting
 value is negative, the calling process blocks itself and remains blocked until
-another process increments `S`, making its value non-negative.
+another process increments .fixedblue[S], making its value non-negative.
 
-- `S.signal()` <br>The semaphore `S` is incremented. If there are any processes
-blocked on `S`, one of them is unblocked.
+- .fixedblue[S.signal()] <br>The semaphore .fixedblue[S] is incremented. If there are any processes
+blocked on .fixedblue[S], one of them is unblocked.
 
 --
 
-The `wait` and `signal` operations were originally called _P_ and _V_ respectively
+The .fixedblue[wait] and .fixedblue[signal] operations were originally called _P_ and _V_ respectively
 by Dijkstra. Dijkstra wrote that _P_ stood for _passering_, the Dutch word for
 "passing", and _V_, for _verhogen_, Dutch for "increase".  Sometimes  instead of
-`wait` and `signal`, people use  `down` and `up` respectively.
+.fixedblue[wait] and .fixedblue[signal], people use  .fixedblue[down] and .fixedblue[up] respectively.
 
 --
 
@@ -2067,7 +2138,7 @@ a .bluebold[counting semaphore].
 name: sem-observations-1
 ### Observations
 
-- There is no busy-waiting in the definition of the `wait` operation. A process
+- There is no busy-waiting in the definition of the .fixedblue[wait] operation. A process
 always blocks itself if it must wait. This is the difference between a mutex
 lock and a binary semaphore - the former involve busy waits but not the latter.
 
@@ -2080,7 +2151,7 @@ of waiting processes, but again, this is not part of the definition.
 
 --
 
-- When a process calls `wait()` it will not know in advance
+- When a process calls .fixedblue[wait()] it will not know in advance
 whether or not it will block - there is no operation that can "read" the value
 of the semaphore.
 
@@ -2091,7 +2162,7 @@ unblocked, they run concurrently.
 
 --
 
-- If several processes call `wait()` or `signal()` at the same time, these
+- If several processes call .fixedblue[wait()] or .fixedblue[signal()] at the same time, these
 calls will occur sequentially in an arbitrary order.
 
 ---
@@ -2099,9 +2170,9 @@ name: sem-observations-2
 ### Observations
 
 - If no processes are blocked on a semaphore, its value is at least zero.
-If, when `signal` is called, the resulting value is positive, it implies that
+If, when .fixedblue[signal] is called, the resulting value is positive, it implies that
 no processes were blocked.
-A process that calls `wait` after this call to `signal` will not block because
+A process that calls .fixedblue[wait] after this call to .fixedblue[signal] will not block because
 the semaphore is positive. In essence, the signal
 is .greenbold[remembered] for the next process. In this sense, semaphores have
 .greenbold[memory].
@@ -2111,7 +2182,7 @@ is .greenbold[remembered] for the next process. In this sense, semaphores have
 - The value of the semaphore, if positive, represents the number of processes that
 can decrement it without blocking. If it is negative, it is the number
 of processes that have blocked and are waiting. If zero, no processes are blocked
-but the next process to call `wait()` will block.
+but the next process to call .fixedblue[wait()] will block.
 
 ---
 name: sem-cs
@@ -2140,14 +2211,14 @@ Each process executes code of the form
 
 --
 
-- The value of `S` is zero when any process is in its CS, and 1 otherwise.
-A process calling `wait()` will block if `S` is 0;
-mutual exclusion is guaranteed since only one process can decrement `S` to zero.
+- The value of .fixedblue[S] is zero when any process is in its CS, and 1 otherwise.
+A process calling .fixedblue[wait()] will block if .fixedblue[S] is 0;
+mutual exclusion is guaranteed since only one process can decrement .fixedblue[S] to zero.
 
 --
 
 - Progress is guaranteed because whenever a process leaves the CS, it increments
-`S`, allowing some process to enter its CS.
+.fixedblue[S], allowing some process to enter its CS.
 
 --
 
@@ -2164,7 +2235,7 @@ the bounded waiting criterion depends on its implementation.
 
 If blocking is implemented by putting processes into a FIFO queue, then a
 process that is waiting to enter its CS is on the queue. Suppose it is the
-_n_.super[_th_] process from the front of the queue. Then at most _n-1_ processes
+$n^{th}$ process from the front of the queue. Then at most $n-1$ processes
 will enter their CS's before it does.
 
 --
@@ -2177,8 +2248,8 @@ that queue.
 
 We have to know the maximum number of processes that might be
 competing for to enter their CS's in order to bound this wait and satisfy
-the bounded waiting criterion. If this number is _N_, then we can safely say
-that bounded waiting is satisfied and _M-1_ is the upper bound.
+the bounded waiting criterion. If this number is $N$, then we can safely say
+that bounded waiting is satisfied and $N-1$ is the upper bound.
 
 ---
 name: counting-sems
@@ -2195,9 +2266,9 @@ Soft resources are things like full buffers, messages, critical sections,
 or open files.
 
 A counting semaphore can allow multiple processes to .greenbold[pass through]
-the call to `wait()` into a region of code.
+the call to .fixedblue[wait()] into a region of code.
 
-The number of processes that can pass through the `wait()` is equal to
+The number of processes that can pass through the .fixedblue[wait()] is equal to
 the initial value of the semaphore.
 
 ---
@@ -2228,9 +2299,9 @@ color-coded to make it easier to read.
 
 Notice that 3 processes execute the "semi-critical" line of code,
 
-`print "accessing buf";`
+.fixedblue[print "accessing buf";]
 
-The 4.super[th] is blocked until `P1` signals `S`.
+The $4^{th}$ is blocked until .fixedblue[P1] signals .fixedblue[S].
 ]]
 
 .right-column[.left[
@@ -2276,7 +2347,7 @@ P2: print "accessing buf";
 ]
 .yellowbox[
 ```C
-P1: S.signal();  // S is 1
+P1: S.signal();  // S is 0
 ```
 ]
 .lightgreenbox[
@@ -2337,13 +2408,13 @@ issues involved in their implementation, and to see the general idea.
 - Modifications to the semaphore's integer variable are a critical section that
 must be executed in mutual exclusion.
 
-- Concurrent execution of `wait()` and `signal()` by multiple processes must
+- Concurrent execution of .fixedblue[wait()] and .fixedblue[signal()] by multiple processes must
 not allow a race condition to occur on the value of this variable.
 
 --
 
 - Therefore, the updates to the internal variable are critical sections in the
-implementations of `wait()` and `signal()`.
+implementations of .fixedblue[wait()] and .fixedblue[signal()].
 
 --
 
@@ -2352,7 +2423,7 @@ waiting.
 
 --
 
-- The code for `wait()` and `signal()` should be uninterruptible for reasons
+- The code for .fixedblue[wait()] and .fixedblue[signal()] should be uninterruptible for reasons
 of efficiency and performance.
 
 ---
@@ -2364,8 +2435,8 @@ the same semaphore to different values, or a process trying to update an
 uninitialized semaphore.
 
 We assume that the following variables are shared variables accessible to the
-implementations of the semaphore functions, `initialize()`, `wait()`, and
-`signal()`.
+implementations of the semaphore functions, .fixedblue[initialize()], .fixedblue[wait()], and
+.fixedblue[signal()].
 
 ```C
     bool lock = false;
@@ -2385,13 +2456,13 @@ without error-checking.
 ```
 ---
 name: wait-implementation
-### Implementing `wait()`
+### Implementing .fixedblue[wait()]
 
 The implementation below is mostly pseudo-code.
 
-The `wait()` function should inhibit interrupts, meaning prevent all but the
+The .fixedblue[wait()] function should inhibit interrupts, meaning prevent all but the
 most important ones.
-We assume a queue named `sem_queue` implements a list of blocked processes, and
+We assume a queue named .fixedblue[sem_queue] implements a list of blocked processes, and
 we use pseudo-code for queue operations and scheduling operations.
 
 ```C
@@ -2415,13 +2486,13 @@ void wait()
 
 ---
 name: signal-implementation
-### Implementing `signal()`
+### Implementing .fixedblue[signal()]
 
 The implementation below is also mostly pseudo-code.
 
-The `signal()` function should inhibit interrupts, meaning prevent all but the
+The .fixedblue[signal()] function should inhibit interrupts, meaning prevent all but the
 most important ones.
-We assume a queue named `sem_queue` implements a list of blocked processes, and
+We assume a queue named .fixedblue[sem_queue] implements a list of blocked processes, and
 we use pseudo-code for queue operations and scheduling operations.
 
 ```C
@@ -2478,9 +2549,9 @@ event that can be caused only by one of these waiting processes.
 An entire chapter is devoted to the study of deadlock. Here we give a
 simple example.
 
-Suppose that two processes, `P` and `Q`, each need to open and modify
+Suppose that two processes, .fixedblue[P] and .fixedblue[Q], each need to open and modify
 the same two files and that these accesses are protected by semaphore operations.
-But `P` and `Q` request the semaphores in opposite order as demonstrated below.
+But .fixedblue[P] and .fixedblue[Q] request the semaphores in opposite order as demonstrated below.
 Assume all semaphores are binary semaphores.
 
 .left-column[.left[
@@ -2506,8 +2577,8 @@ Assume all semaphores are binary semaphores.
 ]]
 
 .below-column[
-Now suppose `P` and `Q` each execute their first `wait()` call. They each acquire
-the semaphore and proceed to their next `wait()` calls where each blocks.
+Now suppose .fixedblue[P] and .fixedblue[Q] each execute their first .fixedblue[wait()] call. They each acquire
+the semaphore and proceed to their next .fixedblue[wait()] calls where each blocks.
 Each is now blocked and can only be unblocked by the other.
 They are .redbold[deadlocked].
 ]
@@ -2528,16 +2599,16 @@ higher priority process needs.
 
 #### Example
 
-Suppose that there are three processes `P1`, `P2`, and `P3`.
-`P1` has the highest priority, `P2` the next highest, and `P3` the lowest.
-Assume that `P3` is currently using a resource `R` that `P1` needs.
-`P3` acquired a lock to use `R`.
-`P1` tried to acquire that lock but is blocked,  waiting for `P3` to finish.
+Suppose that there are three processes .fixedblue[P1], .fixedblue[P2], and .fixedblue[P3].
+.fixedblue[P1] has the highest priority, .fixedblue[P2] the next highest, and .fixedblue[P3] the lowest.
+Assume that .fixedblue[P3] is currently using a resource .fixedblue[R] that .fixedblue[P1] needs.
+.fixedblue[P3] acquired a lock to use .fixedblue[R].
+.fixedblue[P1] tried to acquire that lock but is blocked,  waiting for .fixedblue[P3] to finish.
 
-Now `P2` becomes runnable and preempts `P3`.
-`P2` has lower priority than `P1` and yet it runs before `P1`.
-`P2` has indirectly prevented P1 from gaining access to the resource because
-`P3` will not relinquish it until `P2` finishes.
+Now .fixedblue[P2] becomes runnable and preempts .fixedblue[P3].
+.fixedblue[P2] has lower priority than .fixedblue[P1] and yet it runs before .fixedblue[P1].
+.fixedblue[P2] has indirectly prevented .fixedblue[P1] from gaining access to the resource because
+.fixedblue[P3] will not relinquish it until .fixedblue[P2] finishes.
 
 ---
 name: priority-inheritance
@@ -2572,6 +2643,24 @@ Wiley Global Education, 2018.
      </script>
      <script src="js/remark_conf.js" type="text/javascript">
      </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured"
+         type="text/javascript">
+    </script>
 
+    <script type="text/javascript">
+       <!--var slideshow = remark.create();-->
+
+      // Setup MathJax
+      MathJax.Hub.Config({
+          tex2jax: {
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+            inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+            displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+            processEscapes: true
+          }
+      });
+
+      MathJax.Hub.Configured();
+    </script>
   </body>
 </html>
