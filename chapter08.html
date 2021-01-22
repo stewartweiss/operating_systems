@@ -109,12 +109,12 @@ Having read and understood the content of this chapter, you should be able to
 - provide concrete examples of how deadlock can occur when mutex locks
 are used for synchronizing access to shared resources;
 
-- state the four conditions that must exist for deadlock to occur;
+- state the .greenbold[four conditions] that must exist for deadlock to occur;
 
 - explain what a .greenbold[resource allocation graph] is and determine
   whether or not deadlock is present in a  system modeled by one;
 
-- describe and compare the four high-level ways of preventing deadlock;
+- describe and compare the four strategies for handling the possibility of deadlock;
 
 - apply the .greenbold[Banker's Algorithm] to a system of processes;
 
@@ -128,15 +128,15 @@ name: deadlock-examples
 ### An Example of Deadlock
 
 Suppose that two processes, .fixedblue[P1] and .fixedblue[P2],  each need
-to modify two files  .fixedblue[R1] and .fixedblue[R2].
+to modify two files, named  .fixedblue[R1] and .fixedblue[R2].
 
-Suppose also that files cannot be modified by more than one process at a time.
+Suppose also that files can only be modified by one process at a time.
 
-Processes can only acquire files one at a time, and each needs to have both
+A process can only acquire files one at a time, and each needs to have both
 files open to perform its update.
 
-Therefore, each must acquire both files, perform its update, and then release
-the two files. Their code is something like the following.
+Therefore, each process must acquire both files, one after the other, perform its update, and then release
+the two files. Suppose their code is something like the following.
 
 .left-column[.left[
 ```C
@@ -165,8 +165,8 @@ the two files. Their code is something like the following.
 .below-column[
 If they are each granted their first request,
 i.e., .fixedblue[P1] gets .fixedblue[R1]  and .fixedblue[P2] gets .fixedblue[R2] ,
-before either requests the second file (in the highlighted line above),
-then each process will be holding a file the other needs and in a blocked state,
+before either requests the second file (in the highlighted lines above),
+then each process will be holding a file the other needs and will be in a .redbold[blocked] state,
 waiting for the file held by the other.
 
 This is an example of .bluebold[deadlock].
@@ -174,31 +174,32 @@ This is an example of .bluebold[deadlock].
 
 ---
 name: deadlock-visualized
-### The Example Visualized
+### The Preceding Example Visualized
 
-Suppose that we represent resources such as files by rectangular nodes, and processes by
-ellipses or circles, and
+We can visualize the preceding example as follows.
 
-we represent the fact that a process is .redbold[holding] (has acquired and not released)
-a resource by drawing a .redbold[directed edge from the resource to the process], and
+- We represent resources such as files by .greenbold[rectangular nodes], and processes by
+.greenbold[ellipses or circles];
 
-we represent the fact that a process is .redbold[waiting for] (has requested but not acquired)
+- we represent the fact that a process is .redbold[holding] (has acquired and not released)
+a resource by drawing a .redbold[directed edge from the resource to the process]; and
+
+- we represent the fact that a process is .redbold[waiting for] (has requested but not acquired)
 a resource by drawing a .redbold[directed edge from the process to the resource].
-
-Then the two deadlocked processes can be visualized by the graph below.
 
 
 .center[
     <img src="figures/two-proc-deadlock.png" width=40% alt="2 Process Deadlock"/>
 ]
 
-Notice that this graph has a .redbold[cycle]. This abstraction is the essence of
-the model we present next.
+Notice that this graph has a .redbold[cycle].
+
+This visualization is the essence of the model we present next.
 ---
 name: deadlock-characterization
 layout: false
 class: center, middle, inverse
-## The System Model
+## A System Model
 
 We describe an abstract model of a collection of processes and resources that
 they share that will allow us to reason about deadlock.
@@ -216,17 +217,20 @@ A .bluebold[system] is a collection consisting of processes and resources.
 (Some resources, such as read-only files, can be shared.
 Some, such as mutex locks, are not shared.)
 
-- There is a  finite number .fixedblue[N] of processes
+- We assume  a  finite number .fixedblue[N] of processes
 represented by the symbols .fixedblue[P.sub[1]], .fixedblue[P.sub[2]], ...,.fixedblue[P.sub[N]].
 
-- There is a finite number .fixedblue[t] of .greenbold[resources types]
+- We assume a finite number .fixedblue[t] of .greenbold[resources types]
 represented by the symbols .fixedblue[R.sub[1]], .fixedblue[R.sub[2]], ...,.fixedblue[R.sub[t]].
  - Resource types are things such as memory units, disk blocks, network interfaces, files,
 mutex locks.
 
 - Each resource type consists of a fixed number of identical, interchangeable units.
-The number of units of type .fixedblue[R.sub[k]] is .fixedblue[W.sub[k]].
+The number of units of type .fixedblue[R.sub[k]] is denoted .fixedblue[W.sub[k]].
  - Examples include fixed-size memory blocks or disk blocks, tape drives, etc.
+
+    - If user memory is resource type .fixedblue[R.sub[2]] and it consists of 4194304 4096-byte blocks, then
+.fixedblue[W.sub[2]]=4194304.
 
 ---
 name: resource-use
