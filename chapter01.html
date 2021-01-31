@@ -240,17 +240,17 @@ name: opsys-requirements
 The layered structure of a computer system implies that an operating
 system has three important responsibilities:
 
-   1. The operating system alone must control the hardware resources.
+   1. The operating system alone must .redbold[control the hardware resources].
 
 --
 
-   1. The operating system alone must enable and control the execution of all
-   other software on the computer.
+   1. The operating system alone must enable and
+.redbold[control the execution] of all  other software on the computer.
 
 --
 
-   1. The operating system must give users the ability to develop and
-  run applications and manage their data.
+   1. The operating system must give users the ability to
+.redbold[develop, run, and manage  applications and  their data].
 
 --
 
@@ -522,7 +522,7 @@ to it through the bus, and can query the status of the attached devices.
 
 Because device controllers are special-purpose microprocessors with their
 own unique instruction sets, the software to control them is also highly
-specialized and specific to each different one. The code needed for an
+specialized and specific to each different one. For example, the code needed for an
 Ultra320 SCSI disk controller is very different from the code needed for
 a Parallel ATA disk controller.
 
@@ -544,17 +544,17 @@ In a modern operating system,
 A .bluebold[device driver] is a program or software module that can "drive" that
 controller in much the same way that a person can drive a car. It "knows" the
 controller's instruction set and its interface and can send instructions to the
-device to perform actions, such as reading a number of blocks of data from a disk to transfer to a
+device to perform actions, such as to read a number of blocks of data from a disk to transfer to a
 memory location, or to stop or start the device.
 
 --
 
 Most operating systems have the ability to detect which device drivers they need
 and integrate them into the operating system itself as separate modules.
-_The primary purpose of the device drivers
-is to provide a higher layer of abstraction, so that the operating system programmers do not
+.blue[_The primary purpose of device drivers
+is to provide a  layer of abstraction, so that the operating system programmers do not
 need to know the details of the device controllers to write code to perform tasks
-using those devices._
+using those devices._]
 
 --
 
