@@ -102,12 +102,26 @@ h4 {
     /*font-size: 70%;*/
 }
 
+.abs-up16 {
+    position: absolute;
+    bottom: 16em;
+}
+
 .abs-up10 {
     position: absolute;
     bottom: 10em;
-
-
 }
+
+.abs-up7 {
+    position: absolute;
+    bottom: 7em;
+}
+
+.abs-up3 {
+    position: absolute;
+    bottom: 3em;
+}
+
 
 .remark-code, .remark-inline-code {
     font-family: 'Ubuntu Mono';

@@ -855,7 +855,7 @@ name: interrupt-priorities
 Some interrupts have higher priorities than others:
 if the CPU is in the middle of servicing an interrupt request, and a higher priority
 request occurs, it should interrupt the current ISR.
-On the other hand, if an interrupt request has lower priority then one being
+On the other hand, if an interrupt request has lower priority than the one being
 serviced by the CPU, it should be ignored.
 
 Most systems have a method of .greenbold[prioritizing interrupts], either in hardware alone,
