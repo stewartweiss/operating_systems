@@ -353,9 +353,10 @@ a process is created to run it. It is like the DNA for a process - it contains
 some of the information needed to create a process, which is like a living thing.
 
 - A single program can be run multiple times by the same or different users.
-Each run is a different process.  A good example is .fixedblue[bash] in Linux. On a busy computer,
+Each run results in the creation of a different process.
+A good example is .fixedblue[bash] in Linux. On a busy computer,
 dozens of users might be running .fixedblue[bash] simultaneously. Each user's run of it
-is a unique process.
+is performed by a unique process.
 
 - Try this out: login to a multi-user system running Linux.super[1], and type
 ```bash
@@ -773,7 +774,7 @@ the decision about which memory resident process gets the CPU next.
 Long-term scheduling is used in batch systems to decide the order in which various
 jobs should be  executed. We will not discuss it here.
 
-Medium-term and short-term scheduling are relevant to interactive computer 
+Medium-term and short-term scheduling are relevant to interactive computer
 systems and we focus our attention on these.
 
 
@@ -795,7 +796,7 @@ The number of processes currently in memory is called the .bluebold[degree of mu
 
 --
 
-Some processes .redbold[make heavy use of I/O devices] - 
+Some processes .redbold[make heavy use of I/O devices] -
 they run briefly and immediately issue I/O requests.
 They are called .bluebold[I/O-bound] processes.
 
@@ -814,8 +815,8 @@ name: medium-term-scheduler-2
 ### The Swapper
 
 In interactive computer systems, where users use shells to issue
-commands and run applications and other programs, processes are 
-automatically loaded into memory, so there is no explicit scheduler 
+commands and run applications and other programs, processes are
+automatically loaded into memory, so there is no explicit scheduler
 that .redbold[puts] processes into memory.
 
 --
@@ -857,8 +858,8 @@ control blocks.
 
 .redbold[The CPU scheduler selects processes from the ready queue to run on an available CPU.]
 
-In an interactive system, the CPU scheduler runs very frequently, because it 
-cannot let any process run for too long, otherwise the response times for 
+In an interactive system, the CPU scheduler runs very frequently, because it
+cannot let any process run for too long, otherwise the response times for
 the remaining  processes would be unacceptably long.
 
 Because it runs so frequently, it must be extremely fast, otherwise the overhead of

@@ -49,10 +49,27 @@ name:toc
 [About This Chapter](#about-chapter)<br>
 [Chapter Objectives](#objectives)<br>
 [An Example of Deadlock](#deadlock-examples)<br>
-[The Example Visualized](#deadlock-visualized)<br>
-[Model Characteristics](#system-model-intro)<br>
-[Resource Use](#resource-use)<br>
-[Deadlock State](#deadlock-def)<br>
+[Deadlock Visualized](#deadlock-visualized)<br>
+[Deadlock Visualized](#deadlock-visualized-2)<br>
+[Description of the Model](#system-model-intro)<br>
+[Modeling How Processes Use Resources](#resource-use)<br>
+[Reusable Resource Graphs (RR-Graphs)](#rr-graph-1)<br>
+[Examples of RR-Graphs](#rr-graph-2)<br>
+[Examples of RR-Graphs](#rr-graph-example)<br>
+[Deadlock State](#deadlock-state)<br>
+[Characterizing Deadlock: Four Necessary Conditions](#deadlock-characterization)<br>
+[About Circular Waiting](#circular-waiting)<br>
+[Circular Waiting and Cycles](#deadlock-def)<br>
+[Cycles Do Not Imply Deadlock](#cycles-not-sufficient)<br>
+[A Theorem About Cycles](#rr-graph-cycles)<br>
+[Another Theorem About Cycles](#rr-graph-cycles-2)<br>
+[Using RR-Graphs](#rr-graph-reasoning)<br>
+[Example Leading to Deadlock](#rr-graph-example-2)<br>
+[Other Types of Waiting](#other-events)<br>
+---
+### Table of Contents
+
+[deadlock-handling###](#)<br>
 [References](#references)<br>
 <!--TOC_END-->
 
@@ -127,13 +144,17 @@ are used for synchronizing access to shared resources;
 name: deadlock-examples
 ### An Example of Deadlock
 
-Suppose that two processes, .fixedblue[P1] and .fixedblue[P2],  each need
-to modify two files, named  .fixedblue[R1] and .fixedblue[R2].
+Suppose that each of two processes, .fixedblue[P1] and .fixedblue[P2],  needs to modify
+a file on disk and one on a USB drive. The disk file is named .fixedblue[R1]
+and the one on the USB drive is named .fixedblue[R2].
+(Each file is a .greenbold[resource] and our convention henceforth is to name
+resources using uppercase .fixedblue[R].)
 
-Suppose also that files can only be modified by one process at a time.
+Files can only be modified by one process at a time and
+a process can only acquire files one at a time, but each needs to have both
+files open to perform its updates.
 
-A process can only acquire files one at a time, and each needs to have both
-files open to perform its update.
+--
 
 Therefore, each process must acquire both files, one after the other, perform its update, and then release
 the two files. Suppose their code is something like the following.
@@ -164,7 +185,7 @@ the two files. Suppose their code is something like the following.
 
 .below-column[
 If they are each granted their first request,
-i.e., .fixedblue[P1] gets .fixedblue[R1]  and .fixedblue[P2] gets .fixedblue[R2] ,
+i.e., .fixedblue[P1] gets .fixedblue[R1]  and .fixedblue[P2] gets .fixedblue[R2],
 before either requests the second file (in the highlighted lines above),
 then each process will be holding a file the other needs and will be in a .redbold[blocked] state,
 waiting for the file held by the other.
@@ -174,27 +195,44 @@ This is an example of .bluebold[deadlock].
 
 ---
 name: deadlock-visualized
-### The Preceding Example Visualized
+### Deadlock Visualized
 
-We can visualize the preceding example as follows.
+Deadlock can be visualized with a type of  .greenbold[directed graph] called a
+.bluebold[reusable resource graph] (.bluebold[RR-graph]).
+We illustrate it informally using the preceding example and formalize it later.
 
-- We represent resources such as files by .greenbold[rectangular nodes], and processes by
-.greenbold[ellipses or circles];
+- We represent each process by a node drawn as an .greenbold[ellipse].
 
-- we represent the fact that a process is .redbold[holding] (has acquired and not released)
-a resource by drawing a .redbold[directed edge from the resource to the process]; and
+- We represent each resource by a .greenbold[rectangular node] with a "dot"
+inside to represent the actual file.
 
-- we represent the fact that a process is .redbold[waiting for] (has requested but not acquired)
-a resource by drawing a .redbold[directed edge from the process to the resource].
+- We represent the fact that a process .redbold[is holding] (has acquired and not released)
+a resource with a .redbold[directed edge from the dot inside the resource node to the process].
+This is called an .bluebold[assignment edge].
+
+-  We represent the fact that a process  .redbold[is waiting for] (has requested but not acquired)
+a resource with a .redbold[directed edge from the process to the entire resource node].
+This is called a .bluebold[request edge].
+
+Using these rules, the deadlocked state of the system from the preceding
+example is depicted in the next slide.
+
+---
+name: deadlock-visualized-2
+### Deadlock Visualized
+
 
 
 .center[
     <img src="figures/two-proc-deadlock.png" width=40% alt="2 Process Deadlock"/>
 ]
 
-Notice that this graph has a .redbold[cycle].
+In the figure, the edge from .fixedblue[R1] to .fixedblue[P1] is drawn from the small dot
+representing the single file, but the edge from .fixedblue[P2] to .fixedblue[R1] is drawn just to
+the rectangle itself, for reasons to be explained later.
 
-This visualization is the essence of the model we present next.
+Notice that this graph has a .redbold[cycle]. This is not a coincidence.
+
 ---
 name: deadlock-characterization
 layout: false
@@ -209,47 +247,76 @@ layout: true
 
 ---
 name: system-model-intro
-### Model Characteristics
+###  Description of the Model
 
-A .bluebold[system] is a collection consisting of processes and resources.
+A .bluebold[resource allocation system] is a collection consisting of processes and resources.
+The resources in this system .greenbold[can only be held by one process at a time].super[1].
+(There are resources, such as read-only files, that can be shared; these are excluded.)
+.footnote[
+1 Technically, these notes describe a .bluebold[serially reusable resource allocation system].
+]
+We define it as follows:
 
-- We restrict our attention to resources .greenbold[that can only be held by one process at a time].
-(Some resources, such as read-only files, can be shared.
-Some, such as mutex locks, are not shared.)
+--
 
-- We assume  a  finite number .fixedblue[N] of processes
+- There is  a fixed, finite number .fixedblue[N] of processes
 represented by the symbols .fixedblue[P.sub[1]], .fixedblue[P.sub[2]], ...,.fixedblue[P.sub[N]].
+The process set is static - no processes are created or destroyed.
 
-- We assume a finite number .fixedblue[t] of .greenbold[resources types]
+--
+
+- There is a finite number .fixedblue[t] of .greenbold[resources types]
 represented by the symbols .fixedblue[R.sub[1]], .fixedblue[R.sub[2]], ...,.fixedblue[R.sub[t]].
- - Resource types are things such as memory units, disk blocks, network interfaces, files,
+ - Resource types are things such as memory units, disk blocks, network interfaces, files, and
 mutex locks.
 
-- Each resource type consists of a fixed number of identical, interchangeable units.
-The number of units of type .fixedblue[R.sub[k]] is denoted .fixedblue[W.sub[k]].
- - Examples include fixed-size memory blocks or disk blocks, tape drives, etc.
+--
 
-    - If user memory is resource type .fixedblue[R.sub[2]] and it consists of 4194304 4096-byte blocks, then
-.fixedblue[W.sub[2]]=4194304.
+
+- Each resource type consists of a fixed number of .greenbold[identical, interchangeable units].
+The number of units of type .fixedblue[R.sub[k]] is denoted .fixedblue[W.sub[k]].
+For example:
+
+  - If primary memory is resource type .fixedblue[ R.sub[2]] and it
+consists of 4,194,304 4096-byte blocks, then .fixedblue[W.sub[2]]=4,194,304.
+
+  - If a tertiary storage system used for backup consists of 16 identical tape drives
+and the tape drive type is .fixedblue[ R.sub[5]], then .fixedblue[W.sub[5]]=16.
 
 ---
 name: resource-use
-### Resource Use
+### Modeling How Processes Use Resources
 
-A process .fixedblue[P.sub[i]] uses a resource .fixedblue[R.sub[j]] by performing three actions:
+In this model, for a process .fixedblue[P.sub[i]] to use a resource .fixedblue[R.sub[j]],
+it must perform 3 actions in sequence:
 
- 1. It .redbold[requests] a number of units of the resource less than .fixedblue[W.sub[j]]  (the total of that type),
-and if they are not available, it blocks waiting for them.
+--
 
- 2. It acquires and .redbold[uses] the resource.
+ 1. It .redbold[requests] a number of units of the resource less than .fixedblue[W.sub[j]],
+and if they are not available, it .redbold[blocks] itself to wait for them.
+Because units are identical and interchangeable, a request is not for specific
+units; any of the available ones will satisfy the request.
 
- 3. It .redbold[releases] all units of the resource.
+--
 
-Usually, steps 1 and 3 above are .greenbold[system calls],
+ 2. When all units are available, it .redbold[acquires and uses] the resource.
+The units that it acquires are specific units.
+
+--
+
+ 3. It .redbold[releases] all units of the resource that it holds.
+(Implicitly it has done all of the work that it needed to do with these resources.)
+
+--
+
+Usually steps 1 and 3 above are .greenbold[system calls],
 in which case the operating system must verify and service these calls.
 
-We are mostly interested in request and release of resources managed by the kernel,
-but programmers in general must be concerned about request and release of
+--
+
+Although we are primarily interested in the request and release of resources
+managed by the kernel,
+programmers in general must be concerned about the request and release of
 non-kernel managed resources as well:
 
 - Deadlock can occur within multi-threaded applications, and steps 1 and 3 may not be system
@@ -258,13 +325,524 @@ the resources might be mutex locks provided by the library.  The acquisition and
 locks are not system calls.
 
 ---
-name: deadlock-def
+name: rr-graph-1
+### Reusable Resource Graphs (RR-Graphs)
+
+A .bluebold[reusable resource graph] (.bluebold[RR-graph] for short)
+represents the state of a resource allocation system
+.redbold[at a given moment in time].
+
+It is a directed graph whose vertices are partitioned into two types of nodes:
+.bluebold[resource nodes] and .bluebold[process nodes].
+
+--
+
+- There is a resource node for each resource type in the system. Each
+resource node contains a dot for each unit of the resource type.
+Resource nodes are drawn as .greenbold[rectangles].
+
+--
+
+- There is a process node for each process in the system.
+Process nodes are drawn as .greenbold[ellipses].
+
+--
+
+- If a process is .redbold[holding] (has acquired and not released)
+a unit of a resource, there is a .redbold[directed edge from the unit of the resource to the process].
+This is called an .bluebold[assignment edge].
+Note that processes hold specific units and the edges start at the unit and are
+directed to the process node.
+
+- If a process is .redbold[waiting for] (has requested but not acquired)
+a unit of a resource, there is a .redbold[directed edge from the process to the resource node].
+This is called a .bluebold[request edge].
+Because a request is not for specific units, a request edge is directed at the
+entire resource node. There is a request edge for each unit requested.
+
+
+
+
+---
+name: rr-graph-2
+### Examples of RR-Graphs
+
+
+.redbold[Example]. The node for a  resource with four  units  is drawn like this:
+.center[
+    <img src="figures/resource_node.png" width=10% alt="resource node"/>
+]
+
+--
+
+A system in which, at a given moment, process .fixedblue[P1]  requests two of these units
+would be drawn like this:
+.center[
+    <img src="figures/request2units.png" width=40% alt="resources requested by proc"/>
+]
+
+--
+
+A system in which, at a given moment, process .fixedblue[P1]  holds two of these units
+would be drawn like this:
+.center[
+    <img src="figures/holding2units.png" width=40% alt="resource held by proc"/>
+]
+
+---
+name: rr-graph-example
+### Examples of RR-Graphs
+
+The following figure represents an RR-graph for a 3-process, 3-resource system in
+which no activity has taken place yet.
+
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph00.png" width=60% alt="initial rr-graph"/>
+]
+]
+---
+name: rr-graph-example-2
+count: false
+### Examples of RR-Graphs
+
+.fixedblue[P1] requests a unit of .fixedblue[R1]:
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph01.png" width=60% alt="step 1rr-graph"/>
+]
+]
+
+---
+name: rr-graph-example-3
+count: false
+### Examples of RR-Graphs
+
+.fixedblue[P1] acquires a unit of .fixedblue[R1]:
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph02.png" width=60% alt="step 2 rr-graph"/>
+]
+]
+
+
+---
+name: rr-graph-example-4
+count: false
+### Examples of RR-Graphs
+
+The graph below represent a few actions that took place. .fixedblue[P3]
+requested and acquired 2 units of .fixedblue[R3] and .fixedblue[P2]
+requested and acquired 1 unit of  .fixedblue[R2].
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph03.png" width=60% alt="step 3 rr-graph"/>
+]
+]
+
+
+---
+name: rr-graph-example-5
+count: false
+### Examples of RR-Graphs
+
+The graph below  represent two actions that took place. .fixedblue[P3]
+requested 1 unit of .fixedblue[R1] and .fixedblue[P1]
+requested 1 unit of  .fixedblue[R3]. Notice that there is no cycle in this graph.
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph04.png" width=60% alt="step 4 rr-graph"/>
+]
+]
+
+---
+name: rr-graph-example-6
+count: false
+### Examples of RR-Graphs
+
+Now .fixedblue[P2]
+requests 1 unit of .fixedblue[R2]. Notice that there is now a cycle in this graph.
+Where?
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph05.png" width=60% alt="step 6 rr-graph"/>
+]
+]
+
+--
+
+.abs-up7[
+We will re-examine  this graph a bit later. It is time to formalize deadlock.
+]
+---
+name: deadlock-state
 ### Deadlock State
 
 .lightgreenbox[
 A set of processes is in a .bluebold[deadlock state] when every process in the
 set is .greenbold[waiting for an event that can be caused only by another process in the set].
 ]
+
+.redbold[Example].
+A system has three tape drives.
+Three processes each need two tape drives for reading input data.
+
+1. Each process requests and acquires its first tape drive. (All three drives are now held.)
+2. Now each process requests its second tape drive. (No tape drives are available, so each process blocks.)
+3. Each process is now waiting for an event, the release of a tape drive, that can only
+be caused by one of the other two processes.
+
+They are now in a .bluebold[deadlock] state.
+
+---
+name: deadlock-characterization
+### Characterizing Deadlock: Four Necessary Conditions
+
+Deadlock can arise in a resource allocation system only if all four of the
+following conditions are true of that system simultaneously.
+
+1. .redbold[Mutual Exclusion]. At least one resource must be held in a
+non-shareable mode.
+  - This means that only one process can hold the resource at a time.
+If another process requests it, it will be blocked until the resource is released.
+
+2. .redbold[Hold-and-Wait]. There exists at least one process that is holding a
+resource and waiting to acquire another resource which is held by some other process.
+
+3. .redbold[Non-Preemption]. No resources can be taken away from any process.
+Put another way, a resource can only be released voluntarily by the
+process that holds it when that process has finished using it.
+
+4. .redbold[Circular Waiting]. There exists a set of processes,
+.fixedblue[P.sub[0]], .fixedblue[P.sub[1]], .fixedblue[P.sub[2]],...,.fixedblue[P.sub[n]]
+such that for each k, for 0 &le; k &lt; n, .fixedblue[P.sub[k]] is waiting for a resource held by
+.fixedblue[P.sub[k+1]], and .fixedblue[P.sub[n]] is waiting for a resource held by .fixedblue[P.sub[0]].
+
+  This last condition can only be true if .redbold[Hold-and-Wait] is also true, but not conversely.
+---
+name: circular-waiting
+### About Circular Waiting
+
+The definition of deadlock implies that circular waiting must be true, which implies
+that there must be a cycle in the resource allocation graph that represents the deadlock
+state.
+
+We illustrate this with an example. Suppose a set of five processes is
+in a deadlock state.
+
+This means that each process is waiting for an event that can only be caused
+by another of the five processes.
+
+This implies that each process is waiting for a resource that can only be released
+by one of the others.
+
+For simplicity, assume that the event for which each process waits is the
+release of a resource .fixedblue[R] held by another process.
+
+Instead of drawing the two edges representing one waiting for the resource
+held by the other in the way we did before:
+
+<img src="figures/wait-event.png"  alt="wait-edge">
+
+for simplicity we  omit the resource from the graph, and combine two edges into one:
+
+<img src="figures/wait-event2.png"  alt="wait-edge">
+
+
+---
+name: deadlock-def
+template: tinted-slide
+layout: true
+### Circular Waiting and Cycles
+
+---
+name: deadlock-forming1
+template: deadlock-def
+
+Beging by picking any one of those processes, call it .fixedblue[P1].
+Let .fixedblue[P2] be the process it waits for.
+Then there is an edge from .fixedblue[P1] to .fixedblue[P2]:
+
+.abs-up16[.left[
+<img src="figures/deadlock_abstraction1.png"  alt="deadlock-visualized">
+]]
+
+---
+name: deadlock-forming2
+template: deadlock-def
+
+We name the process that .fixedblue[P2] waits for, .fixedblue[P3] and draw an edge from .fixedblue[P2]
+to .fixedblue[P3]:<br>
+
+.abs-up16[ .left[
+<img src="figures/deadlock_abstraction2.png"  alt="deadlock-visualized">
+]]
+
+---
+name: deadlock-forming3
+template: deadlock-def
+
+Next, we name the process that .fixedblue[P3] waits for, .fixedblue[P4] and draw an edge from .fixedblue[P3]
+to .fixedblue[P4]:
+
+.abs-up16[ .left[
+<img src="figures/deadlock_abstraction3.png"  alt="deadlock-visualized">
+]]
+
+---
+name: deadlock-forming4
+template: deadlock-def
+
+We name the process that .fixedblue[P4] waits for, .fixedblue[P5] and draw an edge from .fixedblue[P4]
+to .fixedblue[P5]:
+
+.abs-up16[ .left[
+<img src="figures/deadlock_abstraction4.png"  alt="deadlock-visualized">
+]]
+
+
+
+---
+name: deadlock-forming5
+template: deadlock-def
+
+Because all five processes are involved in this deadlock,
+.fixedblue[P5] must be waiting for one of .fixedblue[P1],.fixedblue[P2],.fixedblue[P3],
+or .fixedblue[P4]. While it is possible that it could be waiting for any of them,
+no matter which it waits for, there is a cycle in this graph. To illustrate
+we arbitrarily assume it is waiting for  .fixedblue[P2], which holds the resource
+it needs,
+and draw an edge from .fixedblue[P5]
+to .fixedblue[P2]:
+
+.abs-up16[ .left[
+<img src="figures/deadlock_abstraction5b.png"  alt="deadlock-visualized">
+]]
+
+--
+
+.abs-up3[ .left[
+Notice that this graph has a .bluebold[cycle], a sequence of nodes and edges such that starting in any node and
+following the edges, we get back to that same node. The graphs that represent
+deadlock states in our model will always have cycles. The cycle in this case does not include all of
+the deadlocked processes.
+
+.redbold[Does the presence of a cycle in an RR-graph imply that it represents a deadlock state?]
+]]
+
+
+---
+template: tinted-slide
+layout: true
+
+
+---
+name: cycles-not-sufficient
+### Cycles Do Not Imply Deadlock
+
+Consider the RR-graph from the earlier example:
+
+.center[
+    <img src="figures/rr-graph05.png" width=40% alt="step 6 rr-graph"/>
+]
+
+In this graph, .fixedblue[P2] is free to acquire a unit of .fixedblue[R2], since
+.fixedblue[P3] holds only two of them. Similarly, .fixedblue[P1] can acquire a
+unit of .fixedblue[R3], since three are available. Then all processes hold
+the resources they need, none are waiting, and so all release their units
+eventually, leading to a graph with no edges in it.
+
+--
+
+Therefore, this graph does not represent a deadlock state.
+
+---
+name: rr-graph-cycles
+### A Theorem About Cycles
+
+We can now state the following theorem:
+.lightgreenbox[
+.bluebold[Theorem]. A cycle in a reusable resource graph is a necessary
+but not sufficient condition for it to represent a deadlock.
+
+In other words, if it is a deadlock state, it must have a cycle, but having a cycle
+does not imply that it is a deadlock state.
+]
+
+--
+
+The preceding RR-graph provided the "witness" to the claim that graphs with cycles
+are not necessarily deadlock states.
+
+The reason that the preceding RR-graph did not represent a deadlock state was
+that .fixedblue[P2] was free to acquire a unit of .fixedblue[R2] because
+.fixedblue[R2] had multiple units.
+
+---
+name: rr-graph-cycles-2
+### Another Theorem About Cycles
+
+
+If every resource node contains just a single unit, then an outgoing edge
+implies that the resource is in use. If there is also an incoming edge, that resource
+is also requested. The process that requested it is blocked.
+.left-column[
+The  graph to the right illustrates this.
+If there is a cycle, every process in that cycle must be blocked.
+In this graph both .fixedblue[P1] and .fixedblue[P2] are in the cycle and both
+are blocked. Neither will ever run again. This leads to the following:
+]
+.right-column[
+<img src="figures/single-unit-rr-graph.png"  width=60%  alt="deadlock-visualized">
+]
+
+--
+
+.below-column[
+.lightgreenbox[
+.bluebold[Theorem]. A cycle in a reusable resource graph is a necessary
+and sufficient condition for it to represent a deadlock if every resource has just a single unit.
+]
+]
+---
+name: rr-graph-reasoning
+### Using RR-Graphs
+
+One reason to use RR-graphs is that they make things visual and therefore help us to understand deadlock
+in a more intuitive way.
+
+For example, when a process .fixedblue[P] requests a resource .fixedbelue[R],
+we create a request edge .fixedblue[P]&rarr;.fixedblue[R].
+When the resource is granted to the process, the request edge is removed and
+immediately replaced by an assignment edge .fixedblue[P]&larr;.fixedblue[R].
+
+--
+
+We can determine when a system enters a deadlock state by simulating the actions
+using this graph, as we illustrate next.
+
+---
+name: rr-graph-example-2
+### Example Leading to Deadlock
+
+The initial state:
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph10.png" width=60% alt="initial rr-graph"/>
+]
+]
+
+---
+name: rr-graph-example-2a
+count: false
+### Examples of RR-Graphs
+
+.fixedblue[P1] requests requests and acquires 1 unit of .fixedblue[R1]:
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph11.png" width=60% alt="step 1rr-graph"/>
+]
+]
+.abs-up7[
+No deadlock here.
+]
+
+---
+name: rr-graph-example-2b
+count: false
+### Examples of RR-Graphs
+
+.fixedblue[P3] requests and acquires 2 units of .fixedblue[R2]:
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph12.png" width=60% alt="step 1rr-graph"/>
+]
+]
+.abs-up7[
+Still no deadlock here.
+]
+---
+name: rr-graph-example-2c
+count: false
+### Examples of RR-Graphs
+
+.fixedblue[P2] requests and acquires 2 units of .fixedblue[R3]:
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph13.png" width=60% alt="step 1rr-graph"/>
+]
+]
+.abs-up7[
+Still no deadlock here.
+]
+
+---
+name: rr-graph-example-2d
+count: false
+### Examples of RR-Graphs
+
+.fixedblue[P2] requests 2 units of .fixedblue[R2], which are unavailable, so it blocks.
+Instead of drawing multiple request edges, we draw a single edge labeled by how many units
+are requested.
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph14.png" width=60% alt="step 1rr-graph"/>
+]
+]
+.abs-up7[
+Still no deadlock here.
+]
+
+
+---
+name: rr-graph-example-2e
+count: false
+### Examples of RR-Graphs
+
+.fixedblue[P1] requests 3 units of .fixedblue[R3], which are unavailable, so it blocks.
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph15.png" width=60% alt="step 1rr-graph"/>
+]
+]
+.abs-up7[
+Still no deadlock here.
+]
+
+---
+name: rr-graph-example-2f
+count: false
+### Examples of RR-Graphs
+
+.fixedblue[P3] requests 3 units of .fixedblue[R1], which are unavailable, so it blocks.
+
+.abs-up10[
+.center[
+    <img src="figures/rr-graph16.png" width=60% alt="step 1rr-graph"/>
+]
+]
+
+--
+.abs-up7[
+All processes are blocked waiting for resources held by the others, so this is a deadlock state.
+]
+
+---
+name: other-events
+### Other Types of Waiting
+
 
 With respect to the model we just described, the .bluebold[event] for which a process
 waits is the release of a resource by the process that holds it.
@@ -292,24 +870,136 @@ and the second process is waiting for the first's message:
 .below-column[
 This is also deadlock. Messages can be treated as resources also.
 ]
+
+---
+name: deadlock-handling
+### Dealing With Deadlock
+
+There are four general ways in which to deal with deadlock.
+
+- .redbold[Prevention]. Prevention is the act of making sure that one of the necessary conditions cannot
+exist, ever. It enforces control over how a process can request resources.
+
+- .redbold[Avoidance]. Avoidance methods are dynamic algorithms that are applied
+when the system has to decide whether to grant requests for resources to prevent a deadlock state
+from being reached.
+
+- .redbold[Detection]. Detection is required when no attempt is made to
+prevent or avoid deadlock. In systems using detection
+the system periodically runs algorithms to detect whether deadlock exists.
+
+- .redbold[Recovery]. If the system discovers that deadlock has occurred, this refers
+to the means by which it removes that deadlock.
+
+---
+name: prevention
+### Prevention
+
+Prevention must remove one of the necessary conditions. Recall that these are
+
+1. .bluebold[Mutual Exclusion]
+
+2. .bluebold[Hold-and-Wait]
+
+3. .bluebold[Non-Preemption]
+
+4. .bluebold[Circular Waiting]
+
+
+---
+name: prevention-mutex
+### Prevention: Removing Mutual Exclusion
+
+Mutually exclusive acquisition of resources cannot be removed for the types of
+resources that we study here - reusable, non-shareable resources. By definition
+they are held in mutual exclusion. Removing mutual exclusion would mean
+processes could simultaneously send files to a printer, or write to the same
+disk block, etc.
+
+.center[
+<img src="figures/no-mutex.png" width=60% alt="no mutex"/>
+]
+
+---
+name: prevention-hold-wait
+### Prevention: Removing Hold-and-Wait
+
+Removing Hold-and-Wait implies every process must acquire all
+resources it needs all at once. This results in
+
+.left-column[
+- .redbold[poor resource utilization], since
+processes would hold resources they do not use for a long time, and
+
+- potential
+.redbold[starvation] of processes that never get the resources they need.
+
+- To the right, .fixedblue[P.sub[1]] grabbed all resources and now no other process has any!
+]
+.right-column[
+<img src="figures/no-hold-wait.png" width=100% alt="no hold and wait"/>
+]
+
+---
+name: prevention-non-preempt
+### Prevention: Removing Non-Preemption
+
+Removing non-preemption means
+.greenbold[allowing preemption]. That means being able to forcibly take resources
+away from a process.
+
+One protocol to do this is:
+
+- If a process that is holding resources requests
+a resource that cannot be  allocated immediately to it,
+then all of its currently held resources are released.
+
+- The preempted resources are added to the list of resources
+for which the process is waiting and the process is blocked.
+
+- The process is released to run  only when it can acquire its old resources
+together with the ones that it requested after.
+
+--
+
+An alternative protocol is:
+
+- When a process requests a resource, if it is available it is granted.
+If not and it is held by a blocked process,
+the kernel preempts the resource from that blocked process and gives it to the requesting process.
+
+- If it is unavailable and not held by a blocked process, the requesting process
+is blocked. If another process requests any of the resources
+it holds, they are taken away from it. The blocked process is not restarted until
+it has all resources it needs, including any taken away and the ones it requested but was not
+granted.
+
+---
+name: prevention-non-preempt-2
+### Prevention: Removing Non-Preemption
+
+These protocols can be used only for resources whose state can be saved and
+restored, such as hardware in general. It is not usually applied to soft resources
+such as locks, semaphores, etc.
+
+---
+name: prevention-no-circ-wait
+### Prevention: Removing Circular Waiting
+
+
 ---
 name: references
 ### References
 
-1. Dijkstra, E. W. _Cooperating Sequential Processes_. Mathematics Dept.. Technological
-University, Eindhoven, The Netherlands. 1965.
+1. J. W. Havender, “Avoiding Deadlock in Multitasking Systems”,
+IBM Systems Journal, Volume 7, Number 2 (1968), pages 74-84.
 
-2. Pierre-Jacques Courtois, F. Heymans, D.L. Parnas. _Concurrrent Control with "Readers"
-and "Writers"_, __Communications of the ACM__ Vol. 14, No. 10, Oct. 1971.
 
 3. Abraham Silberschatz, Greg Gagne, Peter B. Galvin. __Operating System Concepts__, 10th Edition.
 Wiley Global Education, 2018.
 
-4. Tanenbaum, Andrew S. __Operating Systems Design and Implementation__.
-Prentice-Hall, Inc., 1987.
 
-5. Linux Kernel Documentation Project.
-https://www.kernel.org/doc/html/latest/locking/mutex-design.html
+
 
 
 
