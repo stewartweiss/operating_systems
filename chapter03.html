@@ -918,13 +918,13 @@ is called a .bluebold[context switch].
 It consists of two steps: .bluebold[save the old context] and .bluebold[load the new context].
 
 - In general, the context of a process is saved in its PCB. When it runs
-again, it is used to restore the process to its previous state.
+again, the PCB is used to restore the process to its previous state.
 
 - Context switching time varies from machine to machine. It depends on memory speed,
 size of register set, and whether the architecture has special hardware instructions to copy register sets.
 In general it is costly.
 
-- To reduce the overhead of it, some systems keep multiple sets of registers for each CPU
+- To reduce its overhead, some systems keep multiple sets of registers for each CPU
 so that the old process context does not need to be saved.
 
 ---

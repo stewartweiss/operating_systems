@@ -50,7 +50,6 @@ name:toc
 [Chapter Objectives](#objectives)<br>
 [An Example of Deadlock](#deadlock-examples)<br>
 [Deadlock Visualized](#deadlock-visualized)<br>
-[Deadlock Visualized](#deadlock-visualized-2)<br>
 [Description of the Model](#system-model-intro)<br>
 [Modeling How Processes Use Resources](#resource-use)<br>
 [Reusable Resource Graphs (RR-Graphs)](#rr-graph-1)<br>
@@ -66,10 +65,18 @@ name:toc
 [Using RR-Graphs](#rr-graph-reasoning)<br>
 [Example Leading to Deadlock](#rr-graph-example-2)<br>
 [Other Types of Waiting](#other-events)<br>
+[Dealing With Deadlock](#deadlock-handling)<br>
 ---
 ### Table of Contents
 
-[deadlock-handling###](#)<br>
+[Prevention](#prevention)<br>
+[Prevention: Removing Mutual Exclusion](#prevention-mutex)<br>
+[Prevention: Removing Hold-and-Wait](#prevention-hold-wait)<br>
+[Prevention: Removing Non-Preemption](#prevention-non-preempt)<br>
+[Prevention: Removing Non-Preemption](#prevention-non-preempt-2)<br>
+[Prevention: Removing Circular Waiting](#prevention-no-circ-wait)<br>
+[Example of Ordered Requests](#prevention-example-1)<br>
+[Example of Ordered Requests](#prevention-example-2)<br>
 [References](#references)<br>
 <!--TOC_END-->
 
@@ -105,9 +112,7 @@ In particular, it explores the most important issues related to deadlock, which 
 .lightbluebox[
 - Deadlock Characterization
 
-- Deadlock Prevention
-
-- Deadlock Avoidance
+- Deadlock Prevention and avoidance
 
 - Deadlock Detection
 
@@ -219,6 +224,7 @@ example is depicted in the next slide.
 
 ---
 name: deadlock-visualized-2
+count: false
 ### Deadlock Visualized
 
 
@@ -875,14 +881,19 @@ This is also deadlock. Messages can be treated as resources also.
 name: deadlock-handling
 ### Dealing With Deadlock
 
-There are four general ways in which to deal with deadlock.
+There are three general ways in which to deal with deadlock:
 
-- .redbold[Prevention]. Prevention is the act of making sure that one of the necessary conditions cannot
-exist, ever. It enforces control over how a process can request resources.
+- .redbold[Prevention/Avoidance]. Some people distinguish between
+prevention and avoidance. The distinction is a subtle one.
+  - Prevention is the act of making sure that one or more of the necessary
+conditions cannot exist, ever. It enforces control over how a process can request resources.
 
-- .redbold[Avoidance]. Avoidance methods are dynamic algorithms that are applied
+  - Avoidance methods are dynamic algorithms that are applied
 when the system has to decide whether to grant requests for resources to prevent a deadlock state
-from being reached.
+from being reached. Avoidance algorithms generally control allocation as opposed
+to limiting requests.
+
+  Both prevent deadlock from occurring.
 
 - .redbold[Detection]. Detection is required when no attempt is made to
 prevent or avoid deadlock. In systems using detection
@@ -986,6 +997,195 @@ such as locks, semaphores, etc.
 name: prevention-no-circ-wait
 ### Prevention: Removing Circular Waiting
 
+In 1968, J. W. Havender proposed a method of deadlock prevention for the IBM )S/360 operating
+system by removing the circular waiting condition.
+(In fact he called it a deadlock _avoidance_ method.)
+
+Resource types are put into an ordering relation $R_1 < R_2 < \cdots < R_k$.super[1] <!-- -->
+and processes adhere to a set of rules for making requests for resources.
+.footnote[
+1 We describe this ordering in reverse to be consistent with the textbook's description.
+]
+
+
+Specifically, a process can request resources only in increasing order of its resource type:
+- If a process holds $R_i$ it can only request $R_j$ if $i < j$. <!-- -->
+
+- To request $R_j$, it must first release all $R_k$ such that $j \le k$;
+i.e., it cannot request a resource of a lower number than any it currently holds,
+so it must first release all resources of a higher number in the order.
+
+- If a process violates these rules, it is terminated.
+
+This makes circular waiting impossible, but it still means that sometimes
+resources are held that are not needed until later, resulting in reduced resource
+utilization.
+
+---
+name: prevention-example-1
+### Example of Ordered Requests
+
+A system has three resource types:
+- R1 has 3 units (files)
+- R2 has 2 units (memory blocks)
+- R3 has 1 unit  (I/O device)
+
+There are four processes, which make a sequence of requests adhering
+to the Havender rules. Initially there are no requests.
+.left-column[
+
+
+]
+.right-column[
+    <img src="figures/havender-03.png" width=60% alt="initial state"/>
+]
+
+---
+name: prevention-example-2
+count: false
+### Example of Ordered Requests
+
+A system has three resource types:
+- R1 has 3 units (files)
+- R2 has 2 units (memory blocks)
+- R3 has 1 unit  (I/O device)
+
+There are four processes, which make a sequence of requests adhering
+to the Havender rules. Initially there are no requests.
+.left-column[
+1. P1 requests and acquires 1 unit each of R1, then R2, then R3.
+
+]
+.right-column[
+    <img src="figures/havender-04.png" width=60% alt="initial state"/>
+]
+
+---
+name: prevention-example-3
+count: false
+### Example of Ordered Requests
+
+A system has three resource types:
+- R1 has 3 units (files)
+- R2 has 2 units (memory blocks)
+- R3 has 1 unit  (I/O device)
+
+There are four processes, which make a sequence of requests adhering
+to the Havender rules. Initially there are no requests.
+.left-column[
+1. P1 requests and acquires 1 unit each of R1, then R2, then R3.
+2. P3 requests and acquires 1 unit of R1.
+]
+.right-column[
+    <img src="figures/havender-05.png" width=60% alt="after P3"/>
+]
+
+---
+name: prevention-example-3
+count: false
+### Example of Ordered Requests
+
+A system has three resource types:
+- R1 has 3 units (files)
+- R2 has 2 units (memory blocks)
+- R3 has 1 unit  (I/O device)
+
+There are four processes, which make a sequence of requests adhering
+to the Havender rules. Initially there are no requests.
+.left-column[
+1. P1 requests and acquires 1 unit each of R1, then R2, then R3.
+2. P3 requests and acquires 1 unit of R1.
+3. P4 requests and acquires 1 unit of R1 and 1 unit of R2. It then
+requests 1 unit of R3 but it is now blocked.
+]
+.right-column[
+    <img src="figures/havender-06.png" width=66% alt="after P3"/>
+]
+
+---
+name: prevention-example-4
+count: false
+### Example of Ordered Requests
+
+A system has three resource types:
+- R1 has 3 units (files)
+- R2 has 2 units (memory blocks)
+- R3 has 1 unit  (I/O device)
+
+There are four processes, which make a sequence of requests adhering
+to the Havender rules. Initially there are no requests.
+.left-column[
+1. P1 requests and acquires 1 unit each of R1, then R2, then R3.
+2. P3 requests and acquires 1 unit of R1.
+3. P4 requests and acquires 1 unit of R1 and 1 unit of R2. It then
+requests 1 unit of R3 but it is now blocked.
+4. P2 requests 1 unit of R1 and is blocked (all 3 are held).
+]
+
+.right-column[
+    <img src="figures/havender-07.png" width=66% alt=""/>
+]
+
+---
+name: prevention-example-5
+count: false
+### Example of Ordered Requests
+
+A system has three resource types:
+- R1 has 3 units (files)
+- R2 has 2 units (memory blocks)
+- R3 has 1 unit  (I/O device)
+
+There are four processes, which make a sequence of requests adhering
+to the Havender rules. Initially there are no requests.
+.left-column[
+1. P1 requests and acquires 1 unit each of R1, then R2, then R3.
+2. P3 requests and acquires 1 unit of R1.
+3. P4 requests and acquires 1 unit of R1 and 1 unit of R2. It then
+requests 1 unit of R3 but it is now blocked.
+4. P2 requests 1 unit of R1 and is blocked (all 3 are held).
+5. P3 requests 1 unit of R2 and is blocked.
+]
+
+.right-column[
+    <img src="figures/havender-08.png" width=66% alt=""/>
+]
+
+---
+name: avoidance-1
+### Avoidance Algorithms
+
+Up until now we did not consider the possibility of not granting a request for a
+resource if there were units available.
+
+We assumed that when a process made a request, if the resource were available it
+was granted immediately.
+
+The resulting states are called .bluebold[expedient states]. In an expedient state,
+any process with an outstanding request is in a blocked state.
+
+--
+
+One way to prevent deadlock is to use additional information to allow
+the system to decide when and whether to grant requests instead of granting
+them automatically. This is called .bluebold[deadlock avoidance].
+
+---
+name: claim-graphs
+### Maximum Claim Graphs
+
+One piece of information that makes deadlock avoidance possible is the
+maximum claim for each process for each resource type. If this is known in advance,
+deadlock is avoidable.
+
+The .bluebold[maximum claim] of a process is the largest number of units of each resource
+that it will need at a single time.
+
+--
+
+The maximum claim information can be represented by a two-dimensional matrix.
+
+A request is granted only if the resulting system state is a safe state, meaning that there is a way to avoid deadlock in this state while still continuing to allocate resources to each process.
 
 ---
 name: references
@@ -994,6 +1194,8 @@ name: references
 1. J. W. Havender, “Avoiding Deadlock in Multitasking Systems”,
 IBM Systems Journal, Volume 7, Number 2 (1968), pages 74-84.
 
+2. Richard C. Holt, "Some Deadlock Properties of Computer Systems",
+ACM Computing Surveys, Volume 4, Number 3 (1972), pages 179-196.
 
 3. Abraham Silberschatz, Greg Gagne, Peter B. Galvin. __Operating System Concepts__, 10th Edition.
 Wiley Global Education, 2018.
