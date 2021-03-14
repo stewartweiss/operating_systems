@@ -5,6 +5,12 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
     <link href="css/slides.css" rel="stylesheet" type="text/css" />
+
+    <style>
+    table, th, td {
+      border: 1px solid black;
+    }
+    </style>
     </head>
 
     <body>
@@ -76,7 +82,10 @@ name:toc
 [Prevention: Removing Non-Preemption](#prevention-non-preempt-2)<br>
 [Prevention: Removing Circular Waiting](#prevention-no-circ-wait)<br>
 [Example of Ordered Requests](#prevention-example-1)<br>
-[Example of Ordered Requests](#prevention-example-2)<br>
+[Avoidance Algorithms](#avoidance-1)<br>
+[Avoidance Algorithms Using Maximum Claims](#claim-graphs)<br>
+[Using Maximum Claims](#avoidance-max-claims)<br>
+[The Banker's Algorithm](#bankers-algorithm)<br>
 [References](#references)<br>
 <!--TOC_END-->
 
@@ -1026,9 +1035,9 @@ name: prevention-example-1
 ### Example of Ordered Requests
 
 A system has three resource types:
-- R1 has 3 units (files)
-- R2 has 2 units (memory blocks)
-- R3 has 1 unit  (I/O device)
+- .fixedblue[R1] has 3 units (files)
+- .fixedblue[R2] has 2 units (memory blocks)
+- .fixedblue[R3] has 1 unit  (I/O device)
 
 There are four processes, which make a sequence of requests adhering
 to the Havender rules. Initially there are no requests.
@@ -1046,14 +1055,14 @@ count: false
 ### Example of Ordered Requests
 
 A system has three resource types:
-- R1 has 3 units (files)
-- R2 has 2 units (memory blocks)
-- R3 has 1 unit  (I/O device)
+- .fixedblue[R1] has 3 units (files)
+- .fixedblue[R2] has 2 units (memory blocks)
+- .fixedblue[R3] has 1 unit  (I/O device)
 
 There are four processes, which make a sequence of requests adhering
 to the Havender rules. Initially there are no requests.
 .left-column[
-1. P1 requests and acquires 1 unit each of R1, then R2, then R3.
+1. .fixedblue[P1] requests and acquires 1 unit each of .fixedblue[R1], then .fixedblue[R2], then .fixedblue[R3].
 
 ]
 .right-column[
@@ -1066,18 +1075,18 @@ count: false
 ### Example of Ordered Requests
 
 A system has three resource types:
-- R1 has 3 units (files)
-- R2 has 2 units (memory blocks)
-- R3 has 1 unit  (I/O device)
+- .fixedblue[R1] has 3 units (files)
+- .fixedblue[R2] has 2 units (memory blocks)
+- .fixedblue[R3] has 1 unit  (I/O device)
 
 There are four processes, which make a sequence of requests adhering
 to the Havender rules. Initially there are no requests.
 .left-column[
-1. P1 requests and acquires 1 unit each of R1, then R2, then R3.
-2. P3 requests and acquires 1 unit of R1.
+1. .fixedblue[P1] requests and acquires 1 unit each of .fixedblue[R1], then .fixedblue[R2], then .fixedblue[R3].
+2. .fixedblue[P3] requests and acquires 1 unit of .fixedblue[R1].
 ]
 .right-column[
-    <img src="figures/havender-05.png" width=60% alt="after P3"/>
+    <img src="figures/havender-05.png" width=60% alt="after .fixedblue[P3]"/>
 ]
 
 ---
@@ -1086,20 +1095,20 @@ count: false
 ### Example of Ordered Requests
 
 A system has three resource types:
-- R1 has 3 units (files)
-- R2 has 2 units (memory blocks)
-- R3 has 1 unit  (I/O device)
+- .fixedblue[R1] has 3 units (files)
+- .fixedblue[R2] has 2 units (memory blocks)
+- .fixedblue[R3] has 1 unit  (I/O device)
 
 There are four processes, which make a sequence of requests adhering
 to the Havender rules. Initially there are no requests.
 .left-column[
-1. P1 requests and acquires 1 unit each of R1, then R2, then R3.
-2. P3 requests and acquires 1 unit of R1.
-3. P4 requests and acquires 1 unit of R1 and 1 unit of R2. It then
-requests 1 unit of R3 but it is now blocked.
+1. .fixedblue[P1] requests and acquires 1 unit each of .fixedblue[R1], then .fixedblue[R2], then .fixedblue[R3].
+2. .fixedblue[P3] requests and acquires 1 unit of .fixedblue[R1].
+3. .fixedblue[P4] requests and acquires 1 unit of .fixedblue[R1] and 1 unit of .fixedblue[R2]. It then
+requests 1 unit of .fixedblue[R3] but it is now blocked.
 ]
 .right-column[
-    <img src="figures/havender-06.png" width=66% alt="after P3"/>
+    <img src="figures/havender-06.png" width=66% alt="after .fixedblue[P3]"/>
 ]
 
 ---
@@ -1108,18 +1117,18 @@ count: false
 ### Example of Ordered Requests
 
 A system has three resource types:
-- R1 has 3 units (files)
-- R2 has 2 units (memory blocks)
-- R3 has 1 unit  (I/O device)
+- .fixedblue[R1] has 3 units (files)
+- .fixedblue[R2] has 2 units (memory blocks)
+- .fixedblue[R3] has 1 unit  (I/O device)
 
 There are four processes, which make a sequence of requests adhering
 to the Havender rules. Initially there are no requests.
 .left-column[
-1. P1 requests and acquires 1 unit each of R1, then R2, then R3.
-2. P3 requests and acquires 1 unit of R1.
-3. P4 requests and acquires 1 unit of R1 and 1 unit of R2. It then
-requests 1 unit of R3 but it is now blocked.
-4. P2 requests 1 unit of R1 and is blocked (all 3 are held).
+1. .fixedblue[P1] requests and acquires 1 unit each of .fixedblue[R1], then .fixedblue[R2], then .fixedblue[R3].
+2. .fixedblue[P3] requests and acquires 1 unit of .fixedblue[R1].
+3. .fixedblue[P4] requests and acquires 1 unit of .fixedblue[R1] and 1 unit of .fixedblue[R2]. It then
+requests 1 unit of .fixedblue[R3] but it is now blocked.
+4. .fixedblue[P2] requests 1 unit of .fixedblue[R1] and is blocked (all 3 are held).
 ]
 
 .right-column[
@@ -1132,19 +1141,19 @@ count: false
 ### Example of Ordered Requests
 
 A system has three resource types:
-- R1 has 3 units (files)
-- R2 has 2 units (memory blocks)
-- R3 has 1 unit  (I/O device)
+- .fixedblue[R1] has 3 units (files)
+- .fixedblue[R2] has 2 units (memory blocks)
+- .fixedblue[R3] has 1 unit  (I/O device)
 
 There are four processes, which make a sequence of requests adhering
 to the Havender rules. Initially there are no requests.
 .left-column[
-1. P1 requests and acquires 1 unit each of R1, then R2, then R3.
-2. P3 requests and acquires 1 unit of R1.
-3. P4 requests and acquires 1 unit of R1 and 1 unit of R2. It then
-requests 1 unit of R3 but it is now blocked.
-4. P2 requests 1 unit of R1 and is blocked (all 3 are held).
-5. P3 requests 1 unit of R2 and is blocked.
+1. .fixedblue[P1] requests and acquires 1 unit each of .fixedblue[R1], then .fixedblue[R2], then .fixedblue[R3].
+2. .fixedblue[P3] requests and acquires 1 unit of .fixedblue[R1].
+3. .fixedblue[P4] requests and acquires 1 unit of .fixedblue[R1] and 1 unit of .fixedblue[R2]. It then
+requests 1 unit of .fixedblue[R3] but it is now blocked.
+4. .fixedblue[P2] requests 1 unit of .fixedblue[R1] and is blocked (all 3 are held).
+5. .fixedblue[P3] requests 1 unit of .fixedblue[R2] and is blocked.
 ]
 
 .right-column[
@@ -1166,26 +1175,59 @@ any process with an outstanding request is in a blocked state.
 
 --
 
-One way to prevent deadlock is to use additional information to allow
+One way to prevent deadlock is to use _a priori_ additional information to allow
 the system to decide when and whether to grant requests instead of granting
 them automatically. This is called .bluebold[deadlock avoidance].
 
 ---
 name: claim-graphs
-### Maximum Claim Graphs
+### Avoidance Algorithms Using Maximum Claims
 
 One piece of information that makes deadlock avoidance possible is the
 maximum claim for each process for each resource type. If this is known in advance,
 deadlock is avoidable.
 
-The .bluebold[maximum claim] of a process is the largest number of units of each resource
-that it will need at a single time.
+The .bluebold[maximum claim] of a single process is the largest number of units of each resource
+that it will need at a single time. Each process must declare its needs in advance.
 
 --
 
-The maximum claim information can be represented by a two-dimensional matrix.
+The maximum claims of all processes can be represented by a two-dimensional matrix
+such as the following, for a system with five processes and three resource types.
 
-A request is granted only if the resulting system state is a safe state, meaning that there is a way to avoid deadlock in this state while still continuing to allocate resources to each process.
+.centered_40[
+.center[Maximum Claim Table]
+
+| Process | R1  | R2 | R3 |
+|:---|:---:|:---:|:---:|
+| P1 | 7 | 5 |   3  |
+| P2 | 3 | 6 |   3  |
+| P3 | 9 | 0 |   2  |
+| P4 | 2 | 3 |   2  |
+| P5 | 4 | 3 |   1  |
+]
+
+The table shows that process .fixedblue[P3] will never need any units of .fixedblue[R2]
+and will never need more than 2 units of .fixedblue[R3] at any given time.
+
+---
+name: avoidance-max-claims
+### Using Maximum Claims
+
+A deadlock avoidance algorithm that relies on maximum claim information
+dynamically examines the resource allocation state to ensure that there can
+never be a circular wait condition no matter what happens.
+
+The resource allocation state is the set of all available and allocated
+resources, including which processes are assigned them, such as the rr-graph conveys, augmented
+with the maximum demands of the processes as provided by the maximum claim table.
+---
+name: bankers-algorithm
+### The Banker's Algorithm
+
+A request is granted only if the resulting system state is a safe state,
+meaning that there is a way to avoid deadlock in this state
+while still continuing to allocate resources to each process.
 
 ---
 name: references

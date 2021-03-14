@@ -342,6 +342,12 @@ h4 {
     margin:auto;
 }
 
+.centered_40{
+    width: 40%;
+    margin:auto;
+}
+
+
 .zero_list {
   counter-reset: zero-counter -1;
   text-indent: -2ex;

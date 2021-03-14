@@ -2091,17 +2091,18 @@ have associated permissions and ownership.
 
 --
 
-Otherwise they are used in the same way:
-It is written to and read from in the same way and it
-behaves the same way with respect to the consequences of opening and
-closing it when various processes are either reading or writing or doing neither.
+Otherwise they are used in the same way as unnamed pipes:
+
+- They are written to and read from in the same way and
+behave the same  with respect to the consequences of opening and
+closing  when various processes are either reading or writing or doing neither.
 
 ---
 name: name-pipes-2
 ### Creating and Using Named Pipes
 
 
-In UNIX, a named pipe is created with the .fixedblue[mkfifo()] system call:
+In UNIX, a named pipe can be created with the .fixedblue[mkfifo()] library function.super[1]:
 ```C
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -2109,12 +2110,13 @@ int mkfifo(const char *pathname, mode_t mode);
 ```
 The call .fixedblue[mkfifo("MY_PIPE", 0666)] creates a FIFO named .fixedblue[MY_PIPE].
 The "0666" specifies the permissions associated with the file. In this case, assuming
-nothing unusual.super[1], it will be readable and writable by everyone.
+nothing unusual.super[2], it will be readable and writable by everyone.
 
 The convention is to use UPPERCASE letters for the names of FIFOs.
 
 .footnote[
-1 The actual permission depends on the process's owner's .fixedblue[umask] variable.
+1 It can also be created with the .fixedblue[mknod()] system call.<br>
+2 The actual permission depends on the process's owner's .fixedblue[umask] variable.
 ]
 
 Named pipes can be used to implement local servers - servers running on the local
