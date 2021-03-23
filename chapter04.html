@@ -85,7 +85,7 @@ name:toc
 [About Kernel Level Threads in Linux](#linux-kernel-level-threads)<br>
 [Linux Kernel Level Thread Example](#kthread-example-2)<br>
 [Linux Kernel Level Thread Example](#kthread-example-info)<br>
-[Kernel Threads: Pros and Cons](#kernel-threads-2)<br>
+[Kernel Level Threads: Pros and Cons](#kernel-threads-2)<br>
 [Implementation of User Level Threads](#user-thread-models)<br>
 [Many-to-One (M:1) Threading Model](#many-to-one)<br>
 [Many-to-One (M:1) Threading Model Pros and Cons](#many-to-one-2)<br>
@@ -1222,11 +1222,11 @@ and the parent is going to .fixedblue[wait()] for the .fixedblue[SIGCHLD] signal
 
 ---
 name: kernel-threads-2
-### Kernel Threads: Pros and Cons
+### Kernel Level Threads: Pros and Cons
 
 The .redbold[benefits] of kernel threads are that:
 
-- Kernel threads from a single process can be scheduled simultaneously on multiple
+- Kernel level threads from a single process can be scheduled simultaneously on multiple
 processors, taking advantage of the hardware.
 
 - A thread that blocks as a result of a service request does not prevent other threads
@@ -1240,9 +1240,9 @@ threads.
 
 --
 
-The .redbold[drawbacks] of kernel threads are that:
+The .redbold[drawbacks] of kernel level threads are that:
 
-- It is slower to create kernel threads and more work to manage them because there
+- It is slower to create kernel level threads and more work to manage them because there
 is more work in the kernel.
 
 - Switching between threads in the same process requires kernel intervention and is
