@@ -717,6 +717,7 @@ context switch.
 name: dispatcher
 ### The Dispatcher
 
+.lightgreenbox[
 The dispatcher is invoked by the CPU scheduler and does the following:
 
 - It switches the context from the currently running process to the new one.
@@ -725,6 +726,7 @@ The dispatcher is invoked by the CPU scheduler and does the following:
 
 - It loads the instruction register with the location in the new process at which
 it should start or continue its execution.
+]
 
 --
 
@@ -1177,7 +1179,7 @@ In the preceding example, we saw that when one or more short processes enter the
 queue after a long process, they are all delayed significantly.
 
 Imagine that there is a single long process sharing the processor with many of these
-short processes, and is a consequence of using First-Come-First-Served scheduling.
+short processes.
 
 These short processes are usually I/O-bound,
 issuing I/O requests quickly and immediately blocking. Their I/O is eventually satisfied and they
@@ -1188,7 +1190,7 @@ they "pile up" after it, having to wait for it to relinquish the processor.
 
 This pattern repeats until the compute-bound process terminates. This phenomenon is
 called the .bluebold[convoy effect].  It results in very poor response times for the
-interactive processes.
+interactive processes. It is a consequence of using First-Come-First-Served scheduling.
 
 ---
 name: sjf-intro
