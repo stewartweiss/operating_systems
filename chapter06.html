@@ -1264,16 +1264,16 @@ name: memory-models
 ### Memory Models
 
 - In general on a multiprocessor with separate caches for each core, the order of loads
-and stores seen by each core are not guaranteed to be the same, and there
-are several different abstract models of what orderings are possible.
+and stores seen by one core is not guaranteed to be the same as that seen by another core, and there
+are several different abstract models of which orderings are possible.
 
-- These are called .redbold[memory models]. There are several different models
+- These are called .bluebold[memory models]. There are several different models
 but they mostly fall into two categories:
 
-  -  .redbold[Strongly ordered]: a memory modification of one processor is
+  -  .bluebold[Strongly ordered]: a memory modification by one processor is
       immediately visible to all other processors.
 
-  -  .redbold[Weakly ordered]: where a memory modification of one processor may not be
+  -  .bluebold[Weakly ordered]: a memory modification by one processor may not be
       immediately visible to all other processors.
 
 - Different types of memory barriers work in different ways in these models.
@@ -1290,7 +1290,7 @@ as written:
   ```C
      Thread0:
          while (! flag) ;
-         membarrier(MEMBARRIER_CMD_GLOBAL, 0);
+         membarrier(MEMBARRIER_CMD_SHARED, 0);
          print count;
   ```
   ]]]
@@ -1298,7 +1298,7 @@ as written:
   ```C
      Thread1:
          count = 10;
-         membarrier(MEMBARRIER_CMD_GLOBAL, 0);
+         membarrier(MEMBARRIER_CMD_SHARED, 0);
          flag  = true;
    ```
   ]]]
@@ -1589,7 +1589,7 @@ The same arguments apply here as applied to the code using .fixedblue[test_and_s
 name: spinlocks
 ### Spinlocks
 
-Locks that use busy-waiting loops such as those just shown, using either 
+Locks that use busy-waiting loops such as those just shown, using either
 test-and-set or compare-and-swap:
 
 .centered_80[
