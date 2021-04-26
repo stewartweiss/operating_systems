@@ -2114,8 +2114,8 @@ to the .redbold[non-negative] integer value .fixedblue[c]. Although .fixedblue[S
 value, it cannot be initialized with a negative one.
 
 - .fixedblue[S.wait()] <br>The semaphore .fixedblue[S] is decremented. If the resulting
-value is negative, the calling process blocks itself and remains blocked until
-another process increments .fixedblue[S], making its value non-negative.
+value is negative, the calling process blocks itself. It remains blocked and
+can only become unblocked if another process calls .fixedblue[S.signal()].
 
 - .fixedblue[S.signal()] <br>The semaphore .fixedblue[S] is incremented. If there are any processes
 blocked on .fixedblue[S], one of them is unblocked.
@@ -2247,7 +2247,7 @@ that queue.
 --
 
 We have to know the maximum number of processes that might be
-competing for to enter their CS's in order to bound this wait and satisfy
+competing to enter their CS's in order to bound this wait and satisfy
 the bounded waiting criterion. If this number is $N$, then we can safely say
 that bounded waiting is satisfied and $N-1$ is the upper bound.
 
