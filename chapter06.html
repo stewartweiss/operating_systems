@@ -2301,7 +2301,7 @@ Notice that 3 processes execute the "semi-critical" line of code,
 
 .fixedblue[print "accessing buf";]
 
-The $4^{th}$ is blocked until .fixedblue[P1] signals .fixedblue[S].
+The .fixedblue[P4] is blocked until .fixedblue[P1] signals .fixedblue[S].
 ]]
 
 .right-column[.left[
@@ -2364,9 +2364,9 @@ name: sem-synching
 Semaphores can be used to force one process to execute an instruction
 before another, as the following code demonstrates.
 
-Suppose that one process reads the value of some shared variable and another
-uses it in an output statement. We do not want the one that is outputting to
-do execute its output instruction until after the reader has read it.
+Suppose that one process reads the value of some shared variable from standard input and another
+writes that value in an output statement. We do not want the one that is outputting to
+execute its output instruction until after the other process has read it.
 
 The following code demonstrates how to achieve this.
 
@@ -2420,6 +2420,8 @@ implementations of .fixedblue[wait()] and .fixedblue[signal()].
 
 - Blocking of processes must be implemented in a way that satisfies bounded
 waiting.
+This means that a process in the midst of executing .fixedblue[wait()] or .fixedblue[signal()] must not
+wait indefinitely to perform the update to the semaphore's private variable.
 
 --
 
@@ -2462,7 +2464,8 @@ The implementation below is mostly pseudo-code.
 
 The .fixedblue[wait()] function should inhibit interrupts, meaning prevent all but the
 most important ones.
-We assume a queue named .fixedblue[sem_queue] implements a list of blocked processes, and
+We assume a queue named .fixedblue[sem_queue] implements a list of blocked processes,
+the ready queue is named .fixedblue[ready_queue], and
 we use pseudo-code for queue operations and scheduling operations.
 
 ```C
@@ -2471,7 +2474,7 @@ void wait()
     inhibit interrupts;
     while ( test_and_set(&lock) );
     sem_value = sem_value - 1;
-    if ( sem_value <= -1) {
+    if ( sem_value <= -1) { <!-- -->
         block the process making this call, adding its id to sem_queue;
         remove a process P from ready_queue;
         lock = false;
@@ -2492,7 +2495,8 @@ The implementation below is also mostly pseudo-code.
 
 The .fixedblue[signal()] function should inhibit interrupts, meaning prevent all but the
 most important ones.
-We assume a queue named .fixedblue[sem_queue] implements a list of blocked processes, and
+We assume a queue named .fixedblue[sem_queue] implements a list of blocked processes,
+the ready queue is named .fixedblue[ready_queue], and
 we use pseudo-code for queue operations and scheduling operations.
 
 ```C
@@ -2501,7 +2505,7 @@ void signal()
     inhibit interrupts;
     while ( test_and_set(&lock) );
     sem_value = sem_value + 1;
-    if ( sem_value <= 0) {
+    if ( sem_value <= 0) { <!-- -->
         remove a process P from sem_queue;
         add P to ready_queue;
     }
@@ -2517,22 +2521,28 @@ name: liveness
 Computer scientists distinguish between .greenbold[safety properties] and
 .greenbold[liveness properties].
 
+.lightgreenbox[
 .bluebold[Safety properties] are properties
 that ensure that "something bad cannot happen."
 
 In contrast, .bluebold[liveness properties] are those that ensure that
-"something good must eventually happen."  In the context of concurrent
-systems of processes, and synchronization, it refers to properties
-related to the progress of all processes in the system, even when such
+"something good must eventually happen."
+]
+
+  In the context of concurrent
+systems of processes, and synchronization, liveness refers to properties
+related to the .greenbold[progress] of all processes in the system, even when such
 processes might have to wait or take turns accessing critical sections
 of code.
 
 --
 
+For example,
+
 - Processes may have to .greenbold[wait indefinitely] while trying to acquire a
 synchronization resource such as a mutex lock or semaphore.
 
-- Waiting indefinitely violates the progress and bounded-waiting criteria
+- Waiting indefinitely, called .bluebold[indefinite waiting], violates the progress and bounded-waiting criteria
 discussed earlier in these slides.
 
 - Indefinite waiting is an example of a .redbold[liveness failure].
@@ -2549,10 +2559,14 @@ event that can be caused only by one of these waiting processes.
 An entire chapter is devoted to the study of deadlock. Here we give a
 simple example.
 
-Suppose that two processes, .fixedblue[P] and .fixedblue[Q], each need to open and modify
-the same two files and that these accesses are protected by semaphore operations.
-But .fixedblue[P] and .fixedblue[Q] request the semaphores in opposite order as demonstrated below.
-Assume all semaphores are binary semaphores.
+--
+
+Suppose that two processes, .fixedblue[P] and .fixedblue[Q], each need to .greenbold[open and modify]
+the same two files and that these accesses are protected by semaphore operations on
+.fixedblue[file1_sem] and .fixedblue[file2_sem].
+Unfortunately,  .fixedblue[P] and .fixedblue[Q] request the semaphores in
+reverse order, as demonstrated below.
+Assume all semaphores are binary semaphores, initialized to 1.
 
 .left-column[.left[
 ```C
@@ -2576,6 +2590,8 @@ Assume all semaphores are binary semaphores.
 ```
 ]]
 
+--
+
 .below-column[
 Now suppose .fixedblue[P] and .fixedblue[Q] each execute their first .fixedblue[wait()] call. They each acquire
 the semaphore and proceed to their next .fixedblue[wait()] calls where each blocks.
@@ -2597,16 +2613,21 @@ In .bluebold[priority inversion], the lower priority process can prevent
 the higher priority process from running because it holds a lock that the
 higher priority process needs.
 
+--
+
 #### Example
 
 Suppose that there are three processes .fixedblue[P1], .fixedblue[P2], and .fixedblue[P3].
 .fixedblue[P1] has the highest priority, .fixedblue[P2] the next highest, and .fixedblue[P3] the lowest.
-Assume that .fixedblue[P3] is currently using a resource .fixedblue[R] that .fixedblue[P1] needs.
+- Assume that .fixedblue[P3] is currently using a resource .fixedblue[R] that .fixedblue[P1] needs.
 .fixedblue[P3] acquired a lock to use .fixedblue[R].
-.fixedblue[P1] tried to acquire that lock but is blocked,  waiting for .fixedblue[P3] to finish.
-
-Now .fixedblue[P2] becomes runnable and preempts .fixedblue[P3].
-.fixedblue[P2] has lower priority than .fixedblue[P1] and yet it runs before .fixedblue[P1].
+- .fixedblue[P1] becomes runnable, preempts .fixedblue[P3], and
+tries to acquire that lock but because it is held by .fixedblue[P3],
+it is blocked, and is now  waiting for .fixedblue[P3] to finish.
+- .fixedblue[P3] resumes
+execution.
+- Now .fixedblue[P2] becomes runnable and preempts .fixedblue[P3] because it has higher priority.
+- .fixedblue[P2] has lower priority than .fixedblue[P1] and yet it runs before .fixedblue[P1].
 .fixedblue[P2] has indirectly prevented .fixedblue[P1] from gaining access to the resource because
 .fixedblue[P3] will not relinquish it until .fixedblue[P2] finishes.
 
