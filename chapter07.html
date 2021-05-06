@@ -973,7 +973,7 @@ subject to the following constraints:
 
 Condition 3 implies that
 
-- .redbold[the solution must be deadlock-free], for if it there were any deadlock, it would
+- .redbold[the solution must be deadlock-free], for if there were any deadlock, it would
 imply that two or more philosophers tried to eat but will never eat; and
 
 - .redbold[there is no starvation], because by definition a process starves if it is trying to
@@ -1191,9 +1191,24 @@ In fact, this algorithm uses a just a .redbold[single shared binary semaphore],
 .fixedblue[mutex]. No other semaphore is shared. No other resource is held in
 mutual exclusion.
 
-Since there is just a single shared resource, it is not possible for a
-set of two or more processes to hold resources such that each is waiting
-on a resource held by another. This means that deadlock cannot occur.
+--
+
+- Since there is just one shared resource, if one process holds it,
+that process cannot be waiting to acquire any other resource.
+
+--
+
+- So no process is holding a resource and waiting for some other resource
+held by another process.
+
+--
+
+- Hence, it is not possible for a set of two or more processes 
+to hold resources such that each is waiting on a resource held by another. 
+
+--
+
+- This means that deadlock cannot occur.
 
 ---
 name: code
