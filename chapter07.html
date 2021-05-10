@@ -1349,10 +1349,16 @@ process then updated that data,  it could be corrupted.
 --
 
 - Synchronization was implemented for critical sections by disabling
-and re-enabling interrupts in kernel code.
+and re-enabling interrupts in kernel code.super[1].
 
 - Nothing else was used because critical sections were kept short and
 this was efficient.
+
+.footnote[
+1 This was safe on uniprocessors, but not for symmetric multiprocessors, because
+there was a chance that another processor could access the shared code
+concurrently.
+]
 
 ---
 name: linux-synch-current-1
