@@ -1203,8 +1203,8 @@ held by another process.
 
 --
 
-- Hence, it is not possible for a set of two or more processes 
-to hold resources such that each is waiting on a resource held by another. 
+- Hence, it is not possible for a set of two or more processes
+to hold resources such that each is waiting on a resource held by another.
 
 --
 
@@ -1351,8 +1351,8 @@ process then updated that data,  it could be corrupted.
 - Synchronization was implemented for critical sections by disabling
 and re-enabling interrupts in kernel code.
 
-- Nothing else was needed, even
-on SMPs, because critical sections were kept short and this was efficient.
+- Nothing else was used because critical sections were kept short and
+this was efficient.
 
 ---
 name: linux-synch-current-1
