@@ -83,9 +83,18 @@ name:toc
 [Prevention: Removing Circular Waiting](#prevention-no-circ-wait)<br>
 [Example of Ordered Requests](#prevention-example-1)<br>
 [Avoidance Algorithms](#avoidance-1)<br>
-[Avoidance Algorithms Using Maximum Claims](#claim-graphs)<br>
-[Using Maximum Claims](#avoidance-max-claims)<br>
-[The Banker's Algorithm](#bankers-algorithm)<br>
+[Avoidance Algorithms Using Maximum Needs](#maximum-claim-1)<br>
+[Representing Maximum Needs](#maximum-claim-2)<br>
+[Use of Maximum Need](#further-assumptions)<br>
+[Safe (and Unsafe) System States](#safe-states)<br>
+[Avoiding Deadlock Using Safe States](#safe-avoidance)<br>
+[The Banker's Algorithm](#bankers-algorithm-1)<br>
+[Banker's Algorithm Data Structures](#bankers-algorithm-2)<br>
+[The Safety Algorithm: Initialization](#safety-algorithm-1)<br>
+[The Safety Algorithm](#safety-algorithm-2)<br>
+[The Simulation Algorithm:](#simulation-algorithm-1)<br>
+[An Example](#bankers-algorithm-example)<br>
+[An Example](#bankers-algorithm-example-2)<br>
 [References](#references)<br>
 <!--TOC_END-->
 
@@ -1167,11 +1176,13 @@ name: avoidance-1
 Up until now we did not consider the possibility of not granting a request for a
 resource if there were units available.
 
-We assumed that when a process made a request, if the resource were available it
-was granted immediately.
+We assumed that when a process made a request for a resource,
+if the resource were available,  the request was granted immediately.
 
-The resulting states are called .bluebold[expedient states]. In an expedient state,
-any process with an outstanding request is in a blocked state.
+When this is a standard policy of the operating system, then all states
+are .greenbold[expedient states]. In an .bluebold[expedient state],
+any process with an outstanding request is in a blocked state, because all
+requests that could be satisfied have been satisfied.
 
 --
 
@@ -1180,54 +1191,314 @@ the system to decide when and whether to grant requests instead of granting
 them automatically. This is called .bluebold[deadlock avoidance].
 
 ---
-name: claim-graphs
-### Avoidance Algorithms Using Maximum Claims
+name: maximum-claim-1
+### Avoidance Algorithms Using Maximum Needs
 
-One piece of information that makes deadlock avoidance possible is the
-maximum claim for each process for each resource type. If this is known in advance,
-deadlock is avoidable.
+One type of information that makes deadlock avoidance possible is the
+.greenbold[maximum need] of each process for every resource type.
+If this is known in advance, deadlock is avoidable.
 
-The .bluebold[maximum claim] of a single process is the largest number of units of each resource
-that it will need at a single time. Each process must declare its needs in advance.
+The maximum need of a  process for a single resource type is the largest number of units
+of that resource that it will need to hold .redbold[at the same time].
 
---
+.lightgreenbox[
+The .bluebold[maximum need] of a  process is the maximum number of units of
+each resource type that it will hold .redbold[at the same time].
+]
 
-The maximum claims of all processes can be represented by a two-dimensional matrix
+We can represent the maximum need of a process .fixedblue[P] by a vector of
+length .fixedblue[t] such as this one:
+
+.centered_40[
+|  | .fixedblue[R1]   | .fixedblue[R2] | .fixedblue[R3] | .fixedblue[R4]  |
+|:---:|:---:|:---:|:---:|:---:|
+| .fixedblue[P] |   7 |   5 |  3  |   5 |
+
+]
+
+in which the process will need to hold 7 units of .fixedblue[R1],
+5 units of .fixedblue[R2], 3 units of .fixedblue[R3], and 5 units of
+.fixedblue[R4] all at the same time.
+
+
+
+Each process must declare its needs in advance.
+
+---
+name: maximum-claim-2
+### Representing Maximum Needs
+
+The maximum needs of all processes can be represented by a two-dimensional matrix
 such as the following, for a system with five processes and three resource types.
 
 .centered_40[
-.center[Maximum Claim Table]
-
-| Process | R1  | R2 | R3 |
+|  | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
 |:---|:---:|:---:|:---:|
-| P1 | 7 | 5 |   3  |
-| P2 | 3 | 6 |   3  |
-| P3 | 9 | 0 |   2  |
-| P4 | 2 | 3 |   2  |
-| P5 | 4 | 3 |   1  |
+| .fixedblue[P1] | 7 | 5 |   3  |
+| .fixedblue[P2] | 3 | 6 |   3  |
+| .fixedblue[P3] | 9 | 0 |   2  |
+| .fixedblue[P4] | 2 | 3 |   2  |
+| .fixedblue[P5] | 4 | 3 |   1  |
 ]
 
-The table shows that process .fixedblue[P3] will never need any units of .fixedblue[R2]
-and will never need more than 2 units of .fixedblue[R3] at any given time.
+The matrix shows that process .fixedblue[P3] will never need any units of .fixedblue[R2]
+and will never need more than 9 units of .fixedblue[R1] and 2 units of .fixedblue[R3] at any given time.
 
 ---
-name: avoidance-max-claims
-### Using Maximum Claims
+name: further-assumptions
+### Use of Maximum Need
 
-A deadlock avoidance algorithm that relies on maximum claim information
-dynamically examines the resource allocation state to ensure that there can
-never be a circular wait condition no matter what happens.
+If we know a process's maximum need, and all of the resources are available,
+then if we grant that process all of the resources
+it needs, it will compute everything it needs to compute with those resources and
+then release them, freeing up all resources it holds plus those it was just granted.
 
-The resource allocation state is the set of all available and allocated
-resources, including which processes are assigned them, such as the rr-graph conveys, augmented
-with the maximum demands of the processes as provided by the maximum claim table.
+In effect,  we .redbold[increase] the available resources in the system
+by granting resources to processes that can finish up their work if they are
+given those resources.
+
+This is the strategy of the Banker's Algorithm that we present shortly.
 ---
-name: bankers-algorithm
+name: safe-states
+### Safe (and Unsafe) System States
+
+To prevent deadlock by using the maximum needs of all processes, the  resource allocation
+state of a system must also include information about the maximum need of each process.
+If it has this information, it can distinguish between .greenbold[safe] and
+.greenbold[unsafe] states.
+
+A state is .bluebold[safe]  if it is possible for the system to allocate resources to each
+process in such a way as to avoid deadlock.
+It is an .bluebold[unsafe state]  if no such sequence exists. Unsafe states can lead to
+deadlock.
+
+--
+
+
+
+.left-column[
+This implies that:
+
+- No safe state is a deadlock state.
+
+- Unsafe states are not necessarily deadlock states but might be, and could
+lead to deadlock by the wrong sequence of allocations.
+
+- All deadlock states are unsafe.
+
+The figure to the right illustrates the relationship.
+]
+
+.right-column[
+    <img src="figures/safe-states.png" width=100% alt="safe states"/>
+]
+
+---
+name: safe-avoidance
+### Avoiding Deadlock Using Safe States
+
+A resource allocation algorithm can avoid deadlock using the following strategy:
+
+- When a process requests a resource, the system decides if granting the request
+would leave the system in a .redbold[safe state]:
+
+ -  If so, it grants the request, because from this state .redbold[it can still avoid deadlock].
+
+ -  If not, it does not grant the request, because from this state,
+deadlock might be inevitable.
+
+--
+
+This leads to a concept of .bluebold[safe sequences].
+
+--
+.lightgreenbox[
+A .bluebold[safe sequence] is a sequence
+< P1, P2,..., PN > of .redbold[all processes] in the system such that
+for each Pi, the resources that Pi  requests can be satisfied by
+the  available resources at the time of the request together with the
+resources held by all of the Pj,
+for which j < i. <!-- -->
+]
+
+In essence, a safe sequence is a sequence of processes to which resources should be granted
+to avoid deadlock and that leads to termination of all processes.
+
+---
+name: bankers-algorithm-1
 ### The Banker's Algorithm
 
-A request is granted only if the resulting system state is a safe state,
+The .bluebold[Banker's Algorithm] is an example of an algorithm using this strategy.
+It was invented by Edsger Dijkstra in 1965 and is modeled on the way banks
+make loans.super[1].
+.footnote[
+1. E. Dijkstra, "Cooperating Sequential Processes," Technological University,
+Eindhoven, The Netherlands, 1965.
+]
+
+In the Banker's Algorithm,  when a process makes a request, it  is granted only
+if the resulting system state is a safe state,
 meaning that there is a way to avoid deadlock in this state
 while still continuing to allocate resources to each process.
+
+It has two parts - a .greenbold[safety checking] algorithm that checks if a state is safe
+and a .greenbold[simulation] algorithm that pretends to grant a request and computes
+the resulting state.
+
+---
+name: bankers-algorithm-2
+### Banker's Algorithm Data Structures
+
+Assume .fixedblue[N] is the number of processes and .fixedblue[t] is the number of
+resource types.
+
+It uses four data structures:
+
+-  .fixedblue[Available]: A vector of length .fixedblue[t].
+  -  .fixedblue[Available[j] == k] if and only if k instances of resource type Rj  are available.
+
+- .fixedblue[Max_Claim]: An N x t matrix.
+  - .fixedblue[Max_Claim[i,j] == k] if and only if Pi may hold at most k
+  instances of resource type Rj
+
+- .fixedblue[Allocation]:  An N x t matrix.
+  - .fixedblue[Allocation[i,j] == k]  if and only if  Pi is currently allocated
+  k instances of Rj.
+
+- .fixedblue[Need]: An N x t matrix.
+  - .fixedblue[[i,j] == k] if and only if Pi may need k more instances of
+  Rj to complete its task.
+
+- The .fixedblue[Need] matrix is computed from .fixedblue[Max_Claim] and .fixedblue[Allocation]
+as follows:
+
+  .fixedblue[Need[i.j] = Max_Claim[i,j] - Allocation[i,j]]
+
+---
+name: safety-algorithm-1
+### The Safety Algorithm: Initialization
+
+Given a state characterized by the contents of .fixedblue[Available], .fixedblue[Allocation],
+and .fixedblue[Need], this determines whether the state is safe or not.
+
+Initializations:
+```C
+   Work = Available;
+   Finish[i] = false for i = 0, 1, …, N-1;
+   safe = false; done = false;
+```
+
+---
+name: safety-algorithm-2
+### The Safety Algorithm
+
+Find a running process .fixedblue[Pi] whose maximum need can be satisfied by the available resources
+or report unsafe if there are running processes but none can be satisfied.
+```C
+  while ( ! done ) {
+      for ( i = 0; i < N; i++) {
+          if ( Finish [i] == false && Need[i] &le;  Work ) {
+              // this is a process that can be granted its request
+              break;
+          }
+          else
+              // every process is finished or its request cannot be granted
+              done = true;
+      }
+      if ( ! done ) {
+          Work = Work + Allocation[i];
+          Finish[i] = true;
+      }
+   }
+
+   if ( Finish [i] == true for all i ) {
+       safe = true;
+   }
+   return safe;
+```
+<!-- -->
+---
+name: simulation-algorithm-1
+### The Simulation Algorithm:
+
+Let .fixedblue[Request[i]] be the request vector for process .fixedblue[Pi].
+If .fixedblue[Request[i][j] == k], then .fixedblue[Pi] requests
+.fixedblue[k] instances of resource type .fixedblue[Rj].
+When .fixedblue[Pi] makes a request for resources, the following algorithm is run:
+
+```C
+if ( Request[i] > Need[i] )
+    raise an error condition and exit; // the process has exceeded its maximum claim
+
+if ( Request[i] > Available )
+    make Pi wait until the resources are available;
+
+// pretend to allocate the requested resources to Pi by modifying the state as follows:
+
+Available     = Available – Request[i];
+Allocation[i] = Allocation[i] +  Request[i];
+Need[i]       = Need[i]  – Request[i];
+
+Run the safety algorithm on the resulting state.
+if ( the resulting state is safe )
+    grant the request to Pi ;
+else {
+    make Pi wait for Request[i] to be satisfied;
+    restore the state to the original state;
+}
+```
+---
+name: bankers-algorithm-example
+### An Example
+
+Assume the data structures are as follows:
+.left-column[
+Allocation
+
+|  | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0] | 0 | 1 |   0  |
+| .fixedblue[P1] | 2 | 0 |   0  |
+| .fixedblue[P2] | 3 | 0 |   2  |
+| .fixedblue[P3] | 2 | 1 |   1  |
+| .fixedblue[P4] | 0 | 0 |   2  |
+]
+
+.right-column[
+Max_Claim
+
+| .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---:|:---:|:---:|
+|  7 | 5 |   3  |
+|  3 | 2 |   2  |
+|  9 | 0 |   2  |
+|  2 | 2 |   2  |
+|  4 | 3 |   3  |
+]
+.below-column[
+Available
+
+| .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---:|:---:|:---:|
+| 3 | 2 | 2 |
+]
+
+---
+name: bankers-algorithm-example-2
+### An Example
+
+The Need matrix is therefore
+.centered_40[
+| | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0]|  7 | 4 |   3  |
+| .fixedblue[P1]|  1 | 2 |   2  |
+| .fixedblue[P2]|  6 | 0 |   0  |
+| .fixedblue[P3]|  0 | 1 |   1 |
+| .fixedblue[P4]|  4 | 3 |   1  |
+]
+
+
 
 ---
 name: references
@@ -1239,7 +1510,10 @@ IBM Systems Journal, Volume 7, Number 2 (1968), pages 74-84.
 2. Richard C. Holt, "Some Deadlock Properties of Computer Systems",
 ACM Computing Surveys, Volume 4, Number 3 (1972), pages 179-196.
 
-3. Abraham Silberschatz, Greg Gagne, Peter B. Galvin. __Operating System Concepts__, 10th Edition.
+3. E. Dijkstra, "Cooperating Sequential Processes," Technological University,
+Eindhoven, The Netherlands, 1965.
+
+4. Abraham Silberschatz, Greg Gagne, Peter B. Galvin. __Operating System Concepts__, 10th Edition.
 Wiley Global Education, 2018.
 
 
