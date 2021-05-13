@@ -90,11 +90,13 @@ name:toc
 [Avoiding Deadlock Using Safe States](#safe-avoidance)<br>
 [The Banker's Algorithm](#bankers-algorithm-1)<br>
 [Banker's Algorithm Data Structures](#bankers-algorithm-2)<br>
-[The Safety Algorithm: Initialization](#safety-algorithm-1)<br>
+[The Safety Algorithm](#safety-algorithm-1)<br>
 [The Safety Algorithm](#safety-algorithm-2)<br>
-[The Simulation Algorithm:](#simulation-algorithm-1)<br>
-[An Example](#bankers-algorithm-example)<br>
-[An Example](#bankers-algorithm-example-2)<br>
+[The Simulation Algorithm](#simulation-algorithm-1)<br>
+[Safety Algorithm Example](#bankers-algorithm-example)<br>
+[Simulation Algorithm Example](#bankers-algorithm-example-8)<br>
+[Deadlock Detection](#deadlock-detection)<br>
+[Deadlock Detection Algorithms](#deadlock-detection-2)<br>
 [References](#references)<br>
 <!--TOC_END-->
 
@@ -459,8 +461,8 @@ count: false
 ### Examples of RR-Graphs
 
 The graph below represent a few actions that took place. .fixedblue[P3]
-requested and acquired 2 units of .fixedblue[R3] and .fixedblue[P2]
-requested and acquired 1 unit of  .fixedblue[R2].
+requested and acquired 2 units of .fixedblue[R2] and .fixedblue[P2]
+requested and acquired 1 unit of  .fixedblue[R3].
 
 .abs-up10[
 .center[
@@ -1248,14 +1250,16 @@ and will never need more than 9 units of .fixedblue[R1] and 2 units of .fixedblu
 name: further-assumptions
 ### Use of Maximum Need
 
-If we know a process's maximum need, and all of the resources are available,
-then if we grant that process all of the resources
-it needs, it will compute everything it needs to compute with those resources and
-then release them, freeing up all resources it holds plus those it was just granted.
+If we know a process's maximum need, and all of the resources are available
+to satisfy that need,
+then if we grant that process all of its needed resources,
+it will complete its computation using those resources and
+then release them, freeing up all resources that it currently holds
+plus those it was just granted.
 
-In effect,  we .redbold[increase] the available resources in the system
+In effect,
 by granting resources to processes that can finish up their work if they are
-given those resources.
+given those resources, we .redbold[increase the available resources] in the system
 
 This is the strategy of the Banker's Algorithm that we present shortly.
 ---
@@ -1352,53 +1356,58 @@ name: bankers-algorithm-2
 Assume .fixedblue[N] is the number of processes and .fixedblue[t] is the number of
 resource types.
 
-It uses four data structures:
+The algorithm uses four data structures:
 
--  .fixedblue[Available]: A vector of length .fixedblue[t].
-  -  .fixedblue[Available[j] == k] if and only if k instances of resource type Rj  are available.
 
-- .fixedblue[Max_Claim]: An N x t matrix.
-  - .fixedblue[Max_Claim[i,j] == k] if and only if Pi may hold at most k
-  instances of resource type Rj
+| Name |   Meaning  |
+|:---|:---|:---|
+| .fixedblue[int Available[t]] | .fixedblue[Available[j] == k] if and only if .fixedblue[k] instances of resource type .fixedblue[Rj]  are available.|
+| .fixedblue[int Max_Claim[N][t]]  |     .fixedblue[Max_Claim[i,j] == k]  if and only if .fixedblue[Pi] may hold at most .fixedblue[k] instances of resource type .fixedblue[Rj] |
+| .fixedblue[int Allocation[N][t]] |     .fixedblue[Allocation[i,j] == k] if and only if .fixedblue[Pi] is currently allocated .fixedblue[k]   instances of .fixedblue[Rj] |
+| .fixedblue[int Need[N][t]] |     .fixedblue[Need[i,j] == k] if and only if .fixedblue[Pi] may need .fixedblue[k]  more instances of .fixedblue[Rj]  to complete its task. |
 
-- .fixedblue[Allocation]:  An N x t matrix.
-  - .fixedblue[Allocation[i,j] == k]  if and only if  Pi is currently allocated
-  k instances of Rj.
-
-- .fixedblue[Need]: An N x t matrix.
-  - .fixedblue[[i,j] == k] if and only if Pi may need k more instances of
-  Rj to complete its task.
-
-- The .fixedblue[Need] matrix is computed from .fixedblue[Max_Claim] and .fixedblue[Allocation]
+The .fixedblue[Need] matrix is related to the .fixedblue[Max_Claim] and .fixedblue[Allocation] matrices
 as follows:
 
-  .fixedblue[Need[i.j] = Max_Claim[i,j] - Allocation[i,j]]
+  .fixedblue[Need[i,j] = Max_Claim[i,j] - Allocation[i,j]]
 
 ---
 name: safety-algorithm-1
-### The Safety Algorithm: Initialization
+### The Safety Algorithm
 
 Given a state characterized by the contents of .fixedblue[Available], .fixedblue[Allocation],
-and .fixedblue[Need], this determines whether the state is safe or not.
+and .fixedblue[Need], the safety algorithm determines whether the state is safe or not.
+
+The algorithm uses the following variables, initialized as shown. We use vector operators to simplify
+the code. An assignment `A = B` where `A` and `B` are vectors of length `m`, is short
+for
+```C
+for ( i = 0; i < m; i++) A[i] = B[i];
+```
+Similar shorthand is used for relational operators.
+<!-- -->
 
 Initializations:
 ```C
-   Work = Available;
-   Finish[i] = false for i = 0, 1, …, N-1;
-   safe = false; done = false;
+   int Work[t]   = Available;
+   int Finish[N] = {false};
+   int safe = true;
+   int done = false;
 ```
 
 ---
 name: safety-algorithm-2
 ### The Safety Algorithm
 
-Find a running process .fixedblue[Pi] whose maximum need can be satisfied by the available resources
-or report unsafe if there are running processes but none can be satisfied.
+Given a state characterized by the contents of .fixedblue[Available], .fixedblue[Allocation],
+and .fixedblue[Need], the following algorithm tries to find a running process
+.fixedblue[Pi] whose maximum need can be satisfied by the available resources.
+It returns `true` if one is found and `false` otherwise.
 ```C
   while ( ! done ) {
       for ( i = 0; i < N; i++) {
-          if ( Finish [i] == false && Need[i] &le;  Work ) {
-              // this is a process that can be granted its request
+          if ( Finish[i] == false && Need[i] &le;  Work ) {
+              // Process Pi meets the criteria, so can be granted its request
               break;
           }
           else
@@ -1411,15 +1420,15 @@ or report unsafe if there are running processes but none can be satisfied.
       }
    }
 
-   if ( Finish [i] == true for all i ) {
-       safe = true;
+   for ( i = 0; i < N, i++) {
+       safe = safe &&  Finish [i];  // return true iff all processes terminated
    }
    return safe;
 ```
 <!-- -->
 ---
 name: simulation-algorithm-1
-### The Simulation Algorithm:
+### The Simulation Algorithm
 
 Let .fixedblue[Request[i]] be the request vector for process .fixedblue[Pi].
 If .fixedblue[Request[i][j] == k], then .fixedblue[Pi] requests
@@ -1439,8 +1448,9 @@ Available     = Available – Request[i];
 Allocation[i] = Allocation[i] +  Request[i];
 Need[i]       = Need[i]  – Request[i];
 
-Run the safety algorithm on the resulting state.
-if ( the resulting state is safe )
+// run the safety algorithm on the resulting state:
+safe = is_safe(Available, Allocation, Need);
+if ( safe )
     grant the request to Pi ;
 else {
     make Pi wait for Request[i] to be satisfied;
@@ -1449,10 +1459,104 @@ else {
 ```
 ---
 name: bankers-algorithm-example
-### An Example
+### Safety Algorithm Example
 
-Assume the data structures are as follows:
+Assume there are five processes and three resource types and that the
+total resources of each type are
+
+.centered_40[
+| .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---:|:---:|:---:|
+| 10 | 5 | 7 |
+]
+
+
+---
+name: bankers-algorithm-example-1
+count: false
+### Safety Algorithm Example
+
+The current maximum claims and allocations are:
 .left-column[
+Max_Claim
+
+| | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---:|:---:|:---:|:---:|
+| .fixedblue[P0] |   7 | 5 |   3  |
+| .fixedblue[P1] |   3 | 2 |   2  |
+| .fixedblue[P2] |   9 | 0 |   2  |
+| .fixedblue[P3] |   2 | 2 |   2  |
+| .fixedblue[P4] |   4 | 3 |   3  |
+]
+
+.right-column[
+Allocation
+
+|  | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0] | 0 | 1 |   0  |
+| .fixedblue[P1] | 2 | 0 |   0  |
+| .fixedblue[P2] | 3 | 0 |   2  |
+| .fixedblue[P3] | 2 | 1 |   1  |
+| .fixedblue[P4] | 0 | 0 |   2  |
+| Total          | 7 | 2 |   5  |
+]
+
+--
+.left-column[
+
+Since .fixedblue[Need = Max_Claim - Allocation],  the .fixedblue[Need] matrix is
+
+| | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0]|  7 | 4 |   3  |
+| .fixedblue[P1]|  1 | 2 |   2  |
+| .fixedblue[P2]|  6 | 0 |   0  |
+| .fixedblue[P3]|  0 | 1 |   1  |
+| .fixedblue[P4]|  4 | 3 |   1  |
+]
+
+.right-column[
+
+ and .fixedblue[Available = [10,5,7]  - [7,2,2] = [3, 3, 2]]
+
+We check whether this is a .greenbold[safe state] using the safety algorithm.
+
+]
+
+---
+name: bankers-algorithm-example-2
+count: false
+### Safety Algorithm Example
+
+
+.fixedblue[Work] is initially a copy of  .fixedblue[Available]  and
+.fixedblue[Finished[i]] is initially false for all processes:
+
+.fixedblue[Work = [ 3, 3, 2 ];]
+
+.fixedblue[Finished = [ false, false, false, false, false ]; ]
+
+--
+
+The .fixedblue[Need]  matrix is examined to find a process that is not finished
+and whose .fixedblue[Need] is less than .fixedblue[Work]. In this case either .fixedblue[P1]
+or .fixedblue[P3] satisfies the condition. We choose .fixedblue[P1] and update the
+vectors:
+
+.left-column[
+Need
+
+| | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0]|  7 |4 |  3  |
+| .redbold[P1]|  .redbold[1] | .redbold[2] |   .redbold[2]  |
+| .fixedblue[P2]|  6 | 0 |   0  |
+| .fixedblue[P3]|  0 | 1 |   1 |
+| .fixedblue[P4]|  4 | 3 |   1  |
+]
+
+.right-column[
 Allocation
 
 |  | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
@@ -1464,41 +1568,356 @@ Allocation
 | .fixedblue[P4] | 0 | 0 |   2  |
 ]
 
-.right-column[
-Max_Claim
-
-| .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
-|:---:|:---:|:---:|
-|  7 | 5 |   3  |
-|  3 | 2 |   2  |
-|  9 | 0 |   2  |
-|  2 | 2 |   2  |
-|  4 | 3 |   3  |
-]
 .below-column[
-Available
-
-| .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
-|:---:|:---:|:---:|
-| 3 | 2 | 2 |
+Its allocation is added to .fixedblue[Work] and we  mark it as finished.
 ]
 
 ---
-name: bankers-algorithm-example-2
-### An Example
+name: bankers-algorithm-example-3
+count: false
+### Safety Algorithm Example
 
-The Need matrix is therefore
-.centered_40[
+
+.fixedblue[Work] and .fixedblue[Finished] are now:
+
+.fixedblue[Work = [ 5, 3, 2 ];]
+
+.fixedblue[Finished = [ false, true, false, false, false ]; ]
+
+
+The .fixedblue[Need]  matrix is examined to find another process that is not finished
+and whose .fixedblue[Need] is less than .fixedblue[Work].  .fixedblue[P3]
+is chosen.
+
+.left-column[
+Need
+
 | | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
 |:---|:---:|:---:|:---:|
-| .fixedblue[P0]|  7 | 4 |   3  |
-| .fixedblue[P1]|  1 | 2 |   2  |
+| .fixedblue[P0]|  7 |4 |  3  |
+| .fixedblue[P1] |  1| 2 |   2 |
+| .fixedblue[P2]|  6 | 0 |   0  |
+| .redbold[P3]|  .redbold[0 ]| .redbold[1] |   .redbold[1] |
+| .fixedblue[P4]|  4 | 3 |   1  |
+]
+
+.right-column[
+Allocation
+
+|  | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0] | 0 | 1 |   0  |
+| .fixedblue[P1] | 0 | 0 |   0  |
+| .fixedblue[P2] | 3 | 0 |   2  |
+| .fixedblue[P3] | 2 | 1 |   1  |
+| .fixedblue[P4] | 0 | 0 |   2  |
+]
+
+.below-column[
+Its allocation is added to .fixedblue[Work]  and we  mark it as finished.
+]
+
+
+---
+name: bankers-algorithm-example-4
+count: false
+### Safety Algorithm Example
+
+
+.fixedblue[Work] and .fixedblue[Finished] are now:
+
+.fixedblue[Work = [ 7, 4, 3 ];]
+
+.fixedblue[Finished = [ false, true, false, true, false ]; ]
+
+
+
+The .fixedblue[Need]  matrix is examined to find another process that is not finished
+and whose .fixedblue[Need] is less than .fixedblue[Work]. .fixedblue[P0]
+is chosen.
+
+.left-column[
+Need
+
+| | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .redbold[P0]|  .redbold[7] |.redbold[ 4] |   .redbold[3]  |
+| .fixedblue[P1] |  1 | 2 |   2  |
 | .fixedblue[P2]|  6 | 0 |   0  |
 | .fixedblue[P3]|  0 | 1 |   1 |
 | .fixedblue[P4]|  4 | 3 |   1  |
 ]
 
+.right-column[
+Allocation
 
+|  | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0] | 0 | 1 |   0  |
+| .fixedblue[P1] | 0 | 0 |   0  |
+| .fixedblue[P2] | 3 | 0 |   2  |
+| .fixedblue[P3] | 0 | 0 |   0  |
+| .fixedblue[P4] | 0 | 0 |   2  |
+]
+
+.below-column[
+Its allocation is added to .fixedblue[Work]  and we  mark it as finished.
+]
+
+
+---
+name: bankers-algorithm-example-5
+count: false
+### Safety Algorithm Example
+
+
+.fixedblue[Work] and .fixedblue[Finished] are now:
+
+.fixedblue[Work = [ 7, 5, 3 ];]
+
+.fixedblue[Finished = [ true, true, false, true, false ]; ]
+
+
+
+The .fixedblue[Need]  matrix is examined to find another process that is not finished
+and whose .fixedblue[Need] is less than .fixedblue[Work]. .fixedblue[P2]
+is chosen.
+
+.left-column[
+Need
+
+| | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0]|  7 |4 |  3  |
+| .fixedblue[P1] |  1 | 2 |   2  |
+| .redbold[P2]|  .redbold[6] | .redbold[0] |   .redbold[0]  |
+| .fixedblue[P3]|  0 | 1 |  1 |
+| .fixedblue[P4]|  4 | 3 |   1  |
+]
+
+.right-column[
+Allocation
+
+|  | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0] | 0 | 0 |   0  |
+| .fixedblue[P1] | 0 | 0 |   0  |
+| .fixedblue[P2] | 3 | 0 |   2 |
+| .fixedblue[P3] | 0 | 0 |   0  |
+| .fixedblue[P4] | 0 | 0 |   2  |
+]
+
+.below-column[
+Its allocation is added to .fixedblue[Work]  and we  mark it as finished.
+]
+
+
+
+---
+name: bankers-algorithm-example-6
+count: false
+### Safety Algorithm Example
+
+
+.fixedblue[Work] and .fixedblue[Finished] are now:
+
+.fixedblue[Work = [ 10, 5, 5 ];]
+
+.fixedblue[Finished = [ true, true, true, true, false ]; ]
+
+
+
+The .fixedblue[Need]  matrix is examined to find another process that is not finished
+and whose .fixedblue[Need] is less than .fixedblue[Work]. Only .fixedblue[P4] remains
+and it satisfies the condition.
+
+
+.left-column[
+Need
+
+| | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0]|  7 | 4 |   3  |
+| .fixedblue[P1] |  1 | 2 |   2 |
+| .fixedblue[P2]|  6 | 0|   0  |
+| .fixedblue[P3]|  0 | 1 |   1 |
+| .redbold[P4]|  .redbold[4] | .redbold[3] |   .redbold[1]  |
+]
+
+.right-column[
+Allocation
+
+|  | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0] | 0 | 0 |   0  |
+| .fixedblue[P1] | 0 | 0 |   0  |
+| .fixedblue[P2] | 0 | 0 |   0  |
+| .fixedblue[P3] | 0 | 0 |   0  |
+| .fixedblue[P4] | 0 | 0 |   2  |
+]
+
+.below-column[
+Its allocation is added to .fixedblue[Work]  and we  mark it as finished.
+]
+
+---
+name: bankers-algorithm-example-7
+count: false
+### Safety Algorithm Example
+
+
+All processes are finished and so this state is safe:
+
+.fixedblue[Work = [ 10, 5, 7 ];]
+
+.fixedblue[Finished = [ true, true, true, true, true ]; ]
+
+We see that <.fixedblue[P1], .fixedblue[P3], .fixedblue[P0], .fixedblue[P2], .fixedblue[P4]>
+is a safe sequence in this state.
+
+---
+name: bankers-algorithm-example-8
+### Simulation Algorithm Example
+
+Suppose that, in this state,  .fixedblue[P1]
+requests one additional unit of .fixedblue[R1] and two of .fixedblue[R3].
+Then .fixedblue[Request[1] = [1,0,2]].
+To decide whether this request can be  granted immediately, we run the simulation
+algorithm.
+
+The first two steps check whether .fixedblue[Request[1]]  &gt; .fixedblue[Need[1]]
+and then whether .fixedblue[Request[1]] &gt; .fixedblue[Available].
+
+Since .fixedblue[[1,0,2]] &le; .fixedblue[[1,2,2]], .fixedblue[Request[1]]  &le; .fixedblue[Need[1]].
+Since  .fixedblue[[1,0,2] &le; [3,3,2]], .fixedblue[Request[1]]  &le; .fixedblue[Available].
+
+Therefore the request is valid and we pretend to grant it by changing
+.fixedblue[Available] to .fixedblue[[2,3,0]] to reflect that we allocated
+.fixedblue[[1,0,2]] to .fixedblue[P1] and changing  .fixedblue[Need[1]] and .fixedblue[Allocation]:
+
+
+.left-column[
+Need
+
+| | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0]|  7 | 4 |   3  |
+| .fixedblue[P1]|  0 | 2 |   0  |
+| .fixedblue[P2]|  6 | 0 |   0  |
+| .fixedblue[P3]|  0 | 1 |   1 |
+| .fixedblue[P4]|  4 | 3 |   1  |
+
+]
+
+.right-column[
+Allocation
+
+|  | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0] | 0 | 1 |   0  |
+| .fixedblue[P1] | 3 | 0 |   2  |
+| .fixedblue[P2] | 3 | 0 |   2  |
+| .fixedblue[P3] | 2 | 1 |   1  |
+| .fixedblue[P4] | 0 | 0 |   2  |
+]
+
+
+---
+name: bankers-algorithm-example-9
+count: false
+### Simulation Algorithm Example
+We now check whether this state is safe, using the safety algorithm.
+
+.fixedblue[Work] is initially a copy of  .fixedblue[Available]  and
+.fixedblue[Finished[i]] is initially false for all processes:
+
+.fixedblue[Work = [ 2,3,0 ];]
+
+.fixedblue[Finished = [ false, false, false, false, false ]; ]
+
+In this state only .fixedblue[P1] and .fixedblue[P3] have needs that can be granted
+immediately. We combine two steps and assume .fixedblue[P1] and then .fixedblue[P3]
+have the requests granted.
+
+Their combined allocation is .fixedblue[[5,1,3]], which is added to
+.fixedblue[Work].
+---
+name: bankers-algorithm-example-9
+count: false
+### Simulation Algorithm Example
+
+The resulting state is
+
+.fixedblue[Work = [ 7,4,3 ];]
+
+.fixedblue[Finished = [ false, true, false, true, false ]; ]
+
+
+
+.left-column[
+Need
+
+| | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0]|  7 | 4 |   3  |
+| .fixedblue[P1]|  0 | 2 |   0  |
+| .fixedblue[P2]|  6 | 0 |   0  |
+| .fixedblue[P3]|  0 | 1 |   1 |
+| .fixedblue[P4]|  4 | 3 |   1  |
+
+]
+
+.right-column[
+Allocation
+
+|  | .fixedblue[R1]  | .fixedblue[R2] | .fixedblue[R3] |
+|:---|:---:|:---:|:---:|
+| .fixedblue[P0] | 0 | 1 |   0  |
+| .fixedblue[P1] | 0 | 0 |   0  |
+| .fixedblue[P2] | 3 | 0 |   2  |
+| .fixedblue[P3] | 0 | 0 |   0  |
+| .fixedblue[P4] | 0 | 0 |   2  |
+]
+
+.below-column[
+It is not hard to see that any of the remaining processes can have its
+request granted and so there are several different safe sequences in this
+case. For example,
+<.fixedblue[P1], .fixedblue[P3], .fixedblue[P0], .fixedblue[P2], .fixedblue[P4]>
+is a safe sequence.
+
+It is therefore safe to grant the request to .fixedblue[P1].
+]
+
+---
+name: deadlock-detection
+### Deadlock Detection
+
+Most systems do not do anything about deadlock. They just allow the
+system to enter a deadlock state if it happens.
+
+They need a .greenbold[Deadlock Detection Algorithm] to know when
+deadlock has occurred.
+
+If an algorithm is run, then they also need a .greenbold[Deadlock Recovery Algorithm].
+
+---
+name: deadlock-detection-2
+### Deadlock Detection Algorithms
+
+In the general case, and algorithm similar to the safety algorithm can be run
+to detect deadlock, but it is costly.
+
+
+When, and how often, to invoke depends on:
+How often a deadlock is likely to occur?
+How many processes will need to be rolled back?
+one for each disjoint cycle
+
+If detection algorithm is invoked arbitrarily,
+there may be many cycles in the resource graph
+and so we would not be able to tell which of the
+many deadlocked processes “caused” the deadlock.
 
 ---
 name: references
