@@ -1346,7 +1346,7 @@ meaning that there is a way to avoid deadlock in this state
 while still continuing to allocate resources to each process.
 
 It has two parts - a .greenbold[safety checking] algorithm that checks if a state is safe
-and a .greenbold[simulation] algorithm that pretends to grant a request and computes
+and a .greenbold[request-simulation] algorithm that pretends to grant a request and computes
 the resulting state.
 
 ---
@@ -1428,7 +1428,7 @@ It returns `true` if one is found and `false` otherwise.
 <!-- -->
 ---
 name: simulation-algorithm-1
-### The Simulation Algorithm
+### The Request-Simulation Algorithm
 
 Let .fixedblue[Request[i]] be the request vector for process .fixedblue[Pi].
 If .fixedblue[Request[i][j] == k], then .fixedblue[Pi] requests
@@ -1777,7 +1777,7 @@ is a safe sequence in this state.
 
 ---
 name: bankers-algorithm-example-8
-### Simulation Algorithm Example
+### Request-Simulation Algorithm Example
 
 Suppose that, in this state,  .fixedblue[P1]
 requests one additional unit of .fixedblue[R1] and two of .fixedblue[R3].
@@ -1825,7 +1825,7 @@ Allocation
 ---
 name: bankers-algorithm-example-9
 count: false
-### Simulation Algorithm Example
+### Request-Simulation Algorithm Example
 We now check whether this state is safe, using the safety algorithm.
 
 .fixedblue[Work] is initially a copy of  .fixedblue[Available]  and
@@ -1844,7 +1844,7 @@ Their combined allocation is .fixedblue[[5,1,3]], which is added to
 ---
 name: bankers-algorithm-example-9
 count: false
-### Simulation Algorithm Example
+### Request-Simulation Algorithm Example
 
 The resulting state is
 
@@ -1889,6 +1889,7 @@ is a safe sequence.
 It is therefore safe to grant the request to .fixedblue[P1].
 ]
 
+
 ---
 name: deadlock-detection
 ### Deadlock Detection
@@ -1901,15 +1902,41 @@ deadlock has occurred.
 
 If an algorithm is run, then they also need a .greenbold[Deadlock Recovery Algorithm].
 
+
+---
+name: deadlock-detection-1
+### Deadlock Detection Algorithm
+
+
+We periodically check whether the circular wait condition exists using the following algorithm.
+
+We simulate the most favorable execution of each unblocked process (granting it resources if they exist):
+
+1.  search for an unblocked process that can acquire all of its needed resources
+if none exist, go to step 6
+
+1.  it runs and then releases all resources it holds (reducing the RR-graph)
+
+1.  it then becomes dormant
+
+1.  the released resources may wake up some previously blocked process
+
+1.  go back to step 1
+
+1.  If any blocked processes remain, they are deadlocked
+
 ---
 name: deadlock-detection-2
-### Deadlock Detection Algorithms
+### Deadlock Detection Algorithm
 
-In the general case, and algorithm similar to the safety algorithm can be run
-to detect deadlock, but it is costly.
+The preceding algorithm is similar to the safety algorithm but it does not require maximum
+claim information.
+
+But it is $O(t\cdot N^2)$ where $t$ is the number of resource types and $N$ is the number of processes
+and is therefore costly to run.
 
 
-When, and how often, to invoke depends on:
+When, and how often, to invoke it depends on:
 How often a deadlock is likely to occur?
 How many processes will need to be rolled back?
 one for each disjoint cycle
@@ -1918,6 +1945,10 @@ If detection algorithm is invoked arbitrarily,
 there may be many cycles in the resource graph
 and so we would not be able to tell which of the
 many deadlocked processes “caused” the deadlock.
+
+It is not necessary to invoke it unless a process has made a request.
+
+
 
 ---
 name: references
