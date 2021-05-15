@@ -92,11 +92,16 @@ name:toc
 [Banker's Algorithm Data Structures](#bankers-algorithm-2)<br>
 [The Safety Algorithm](#safety-algorithm-1)<br>
 [The Safety Algorithm](#safety-algorithm-2)<br>
-[The Simulation Algorithm](#simulation-algorithm-1)<br>
+[The Request-Simulation Algorithm](#simulation-algorithm-1)<br>
 [Safety Algorithm Example](#bankers-algorithm-example)<br>
-[Simulation Algorithm Example](#bankers-algorithm-example-8)<br>
+[Request-Simulation Algorithm Example](#bankers-algorithm-example-8)<br>
 [Deadlock Detection](#deadlock-detection)<br>
-[Deadlock Detection Algorithms](#deadlock-detection-2)<br>
+[Deadlock Detection Algorithms](#deadlock-detection-1)<br>
+[Deadlock Detection Algorithm](#deadlock-detection-2)<br>
+---
+### Table of Contents
+
+[Deadlock Recovery](#deadlock-recovery)<br>
 [References](#references)<br>
 <!--TOC_END-->
 
@@ -1897,33 +1902,39 @@ name: deadlock-detection
 Most systems do not do anything about deadlock. They just allow the
 system to enter a deadlock state if it happens.
 
-They need a .greenbold[Deadlock Detection Algorithm] to know when
+Such systems can use a .greenbold[deadlock detection algorithm] to discover when
 deadlock has occurred.
 
-If an algorithm is run, then they also need a .greenbold[Deadlock Recovery Algorithm].
+If deadlock is detected, the system can then use a .greenbold[deadlock recovery algorithm] to undo the deadlock.
+
+
 
 
 ---
 name: deadlock-detection-1
-### Deadlock Detection Algorithm
+### Deadlock Detection Algorithms
 
+Deadlock detection algorithms check whether  the circular wait condition exists.
 
-We periodically check whether the circular wait condition exists using the following algorithm.
+- It simulates the most favorable execution of each unblocked process,
+by granting it all resources for which it has outstanding requests if they are available.
 
-We simulate the most favorable execution of each unblocked process (granting it resources if they exist):
+- Specifically:
 
-1.  search for an unblocked process that can acquire all of its needed resources
-if none exist, go to step 6
+ 1.  It searches for an unblocked process that can acquire all of its needed resources;
+if no such process exists, it jumps  to step 6.
 
-1.  it runs and then releases all resources it holds (reducing the RR-graph)
+ 1.  Such process "runs" and then releases all resources it holds (reducing the RR-graph).
 
-1.  it then becomes dormant
+ 1.  And then becomes dormant.
 
-1.  the released resources may wake up some previously blocked process
+ 1.  The released resources increase the total available and may as a result wake
+up some previously blocked process.
 
-1.  go back to step 1
+  1.  It then repeats starting with step 1.
 
-1.  If any blocked processes remain, they are deadlocked
+ 1.  If any blocked processes remain, they are deadlocked. If all processes have finished,
+no deadlock exists.
 
 ---
 name: deadlock-detection-2
@@ -1935,20 +1946,45 @@ claim information.
 But it is $O(t\cdot N^2)$ where $t$ is the number of resource types and $N$ is the number of processes
 and is therefore costly to run.
 
-
 When, and how often, to invoke it depends on:
-How often a deadlock is likely to occur?
-How many processes will need to be rolled back?
-one for each disjoint cycle
 
-If detection algorithm is invoked arbitrarily,
+- How often a deadlock is likely to occur?
+
+- How many processes will need to be rolled back?
+one for each disjoint cycle?
+
+- If a deadlock detection algorithm is run at random times,
 there may be many cycles in the resource graph
 and so we would not be able to tell which of the
 many deadlocked processes “caused” the deadlock.
 
-It is not necessary to invoke it unless a process has made a request.
+- It is better to run it only when a process has made a request for resources,
+since it is only new requests that can cause deadlock, not after releases.
 
+---
+name: deadlock-recovery
+### Deadlock Recovery
 
+There are various strategies for recovering from deadlock.
+
+- The simplest - abort all deadlocked processes. This is very costly though
+easy to implement.
+
+- More complex - abort one process at a time until the deadlock cycle is eliminated
+ But, in which order should they be aborted? Choices:
+  1. Priority of the process
+
+  2. How long process it has computed, and/or how much longer to
+completion
+
+  3. How many resources the process has acquired
+
+  4. How many resources the process needs to complete
+
+  5. How many processes will need to be terminated if this one is terminated (children, and other
+processes communicating with process)
+
+  6. Is the process interactive or batch?
 
 ---
 name: references
