@@ -1343,8 +1343,8 @@ only one process could be executing kernel code at a time.
 --
 
 - Nonetheless, modifying shared data was a critical section, because if a
-process could be interrupted in the middle of a modification, and another
-process then updated that data,  it could be corrupted.
+process could be interrupted in the middle of a modification, and an interrupt handler
+ updated that data,  it could be corrupted.
 
 --
 

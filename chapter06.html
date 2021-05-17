@@ -2474,7 +2474,7 @@ void wait()
     inhibit interrupts;
     while ( test_and_set(&lock) );
     sem_value = sem_value - 1;
-    if ( sem_value <= -1) { <!-- -->
+    if ( sem_value <= -1) {
         block the process making this call, adding its id to sem_queue;
         remove a process P from ready_queue;
         lock = false;
@@ -2505,7 +2505,7 @@ void signal()
     inhibit interrupts;
     while ( test_and_set(&lock) );
     sem_value = sem_value + 1;
-    if ( sem_value <= 0) { <!-- -->
+    if ( sem_value <= 0) {
         remove a process P from sem_queue;
         add P to ready_queue;
     }
