@@ -1397,7 +1397,7 @@ Initializations:
    int Work[t]   = Available;
    int Finish[N] = {false};
    int safe = true;
-   int done = false;
+   int found, done = false;
 ```
 
 ---
@@ -1410,19 +1410,20 @@ and .fixedblue[Need], the following algorithm tries to find a running process
 It returns `true` if one is found and `false` otherwise.
 ```C
   while ( ! done ) {
+      found = false;
       for ( i = 0; i < N; i++) {
           if ( Finish[i] == false && Need[i] &le;  Work ) {
               // Process Pi meets the criteria, so can be granted its request
+              found = true;
               break;
           }
-          else
-              // every process is finished or its request cannot be granted
-              done = true;
       }
-      if ( ! done ) {
+      if ( found ) {
           Work = Work + Allocation[i];
           Finish[i] = true;
       }
+      else
+          done = true;
    }
 
    for ( i = 0; i < N, i++) {
